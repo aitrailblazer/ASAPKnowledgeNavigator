@@ -1,0 +1,54 @@
+name: Simple Log Analysis Test
+
+on:
+  workflow_dispatch:
+    inputs:
+      access_code:
+        description: 'Access Code'
+        required: true
+        type: string
+      issue_title:
+        description: 'Title for the GitHub Issue'
+        required: true
+        type: string
+      log_analysis:
+        description: 'Detailed Log Analysis Report'
+        required: true
+        type: string
+
+jobs:
+  validate-and-act:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Validate Access Code
+        env:
+          ACCESS_CODE_HASH: ${{ secrets.ACCESS_CODE_HASH }}
+        run: |
+          # Calculate the SHA256 hash of the provided access code without a newline
+          echo -n "${{ github.event.inputs.access_code }}" | sha256sum | awk '{print $1}' | tr '[:upper:]' '[:lower:]' > computed_hash.txt
+          # Compare the calculated hash with the stored hash
+          if ! cmp -s computed_hash.txt <(echo "$ACCESS_CODE_HASH"); then
+            echo "Access code validation failed."
+            exit 1
+          else
+            echo "Access code validation succeeded."
+          fi
+
+      - name: Create Issue with Log Analysis
+        if: success()  # Only proceed if the above step was successful
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GH_TOKEN }}
+          script: |
+            const issueTitle = `${{ github.event.inputs.issue_title }}`;
+            const issueBody = `${{ github.event.inputs.log_analysis }}`;
+            github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: issueTitle,
+              body: issueBody,
+            });
