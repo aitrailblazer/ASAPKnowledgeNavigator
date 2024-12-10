@@ -68,3 +68,16 @@
 /Users/constantinevassilev02/MyLocalDocuments/go-projects/K8sLogBotRAG/GitHubActionTriggerCLI/obj/Debug/net9.0/GitHubActionTriggerCLI.pdb
 /Users/constantinevassilev02/MyLocalDocuments/go-projects/K8sLogBotRAG/GitHubActionTriggerCLI/obj/Debug/net9.0/GitHubActionTriggerCLI.genruntimeconfig.cache
 /Users/constantinevassilev02/MyLocalDocuments/go-projects/K8sLogBotRAG/GitHubActionTriggerCLI/obj/Debug/net9.0/ref/GitHubActionTriggerCLI.dll
+/Users/constantinevassilev02/MyLocalDocuments/go-projects/K8sLogBotRAG/GitHubActionTriggerCLI/bin/Debug/net9.0/Fractions.dll
+/Users/constantinevassilev02/MyLocalDocuments/go-projects/K8sLogBotRAG/GitHubActionTriggerCLI/bin/Debug/net9.0/IdentityModel.dll
+/Users/constantinevassilev02/MyLocalDocuments/go-projects/K8sLogBotRAG/GitHubActionTriggerCLI/bin/Debug/net9.0/IdentityModel.OidcClient.dll
+/Users/constantinevassilev02/MyLocalDocuments/go-projects/K8sLogBotRAG/GitHubActionTriggerCLI/bin/Debug/net9.0/KubernetesClient.dll
+/Users/constantinevassilev02/MyLocalDocuments/go-projects/K8sLogBotRAG/GitHubActionTriggerCLI/bin/Debug/net9.0/Microsoft.Extensions.Logging.dll
+/Users/constantinevassilev02/MyLocalDocuments/go-projects/K8sLogBotRAG/GitHubActionTriggerCLI/bin/Debug/net9.0/Microsoft.Extensions.Options.dll
+/Users/constantinevassilev02/MyLocalDocuments/go-projects/K8sLogBotRAG/GitHubActionTriggerCLI/bin/Debug/net9.0/Microsoft.Extensions.Primitives.dll
+/Users/constantinevassilev02/MyLocalDocuments/go-projects/K8sLogBotRAG/GitHubActionTriggerCLI/bin/Debug/net9.0/Microsoft.IdentityModel.Abstractions.dll
+/Users/constantinevassilev02/MyLocalDocuments/go-projects/K8sLogBotRAG/GitHubActionTriggerCLI/bin/Debug/net9.0/Microsoft.IdentityModel.JsonWebTokens.dll
+/Users/constantinevassilev02/MyLocalDocuments/go-projects/K8sLogBotRAG/GitHubActionTriggerCLI/bin/Debug/net9.0/Microsoft.IdentityModel.Logging.dll
+/Users/constantinevassilev02/MyLocalDocuments/go-projects/K8sLogBotRAG/GitHubActionTriggerCLI/bin/Debug/net9.0/Microsoft.IdentityModel.Tokens.dll
+/Users/constantinevassilev02/MyLocalDocuments/go-projects/K8sLogBotRAG/GitHubActionTriggerCLI/bin/Debug/net9.0/System.IdentityModel.Tokens.Jwt.dll
+/Users/constantinevassilev02/MyLocalDocuments/go-projects/K8sLogBotRAG/GitHubActionTriggerCLI/bin/Debug/net9.0/YamlDotNet.dll

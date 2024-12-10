@@ -88,7 +88,14 @@ Error when triggering GitHub Action:
 To get started with GitHub CLI, please run:  gh auth login
 Alternatively, populate the GH_TOKEN environment variable with a GitHub API authentication token.
 ```
+```bash
+dotnet run Secret123
+Access code is valid. Generating GPT-based analysis...
+GPT-based analysis generated. Triggering GitHub Action...
+GitHub Action Output:
 
+GitHub Action successfully triggered.
+```
 Reviewing Results
 Once the analysis is complete, review the results posted as comments in the relevant GitHub Issues for further action.
 

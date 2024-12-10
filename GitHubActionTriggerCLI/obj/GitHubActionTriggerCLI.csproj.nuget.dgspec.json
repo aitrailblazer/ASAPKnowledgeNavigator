@@ -49,6 +49,10 @@
               "target": "Package",
               "version": "[2.1.0-beta.2, )"
             },
+            "KubernetesClient": {
+              "target": "Package",
+              "version": "[15.0.1, )"
+            },
             "Microsoft.SemanticKernel": {
               "target": "Package",
               "version": "[1.30.0, )"

@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("GitHubActionTriggerCLI")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+866434f94926c586abf28aefd027a2cfd4ce4b39")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+ae62d4c9acf30f366cdc2675fcf79842cfb4a413")]
 [assembly: System.Reflection.AssemblyProductAttribute("GitHubActionTriggerCLI")]
 [assembly: System.Reflection.AssemblyTitleAttribute("GitHubActionTriggerCLI")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
