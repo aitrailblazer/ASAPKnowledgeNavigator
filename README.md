@@ -1,4 +1,7 @@
 # K8sLogBotRAG: Kubernetes Log Analyzer
+
+Copyright© 2024 AITrailblazer, LLC. All rights reserved
+
 <!-- Write an introduction for the project, including its purpose and main features. -->
 K8sLogBotRAG is an AI-driven solution designed to streamline log analysis for Azure Kubernetes Service (AKS) clusters. By integrating a C# application with GitHub Actions, it provides automated retrieval and examination of Kubernetes logs. The main features include:
 
@@ -108,6 +111,3 @@ Once the analysis is complete, review the results posted as comments in the rele
 
 Workflow Configuration
 Configure the workflow to suit your needs by modifying the GitHub Actions YAML files in the .github/workflows directory.
-
-Contributing
-Contributions are welcome! Please fork the repository and submit a pull request with your changes.

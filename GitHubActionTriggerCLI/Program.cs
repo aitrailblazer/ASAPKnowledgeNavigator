@@ -11,6 +11,8 @@ using Microsoft.SemanticKernel.Connectors.AzureOpenAI;
 using System.Text.Json;
 using System.Linq; // Add this for LINQ methods
 
+// Copyright© 2024 AITrailblazer, LLC. All rights reserved.
+
 class Program
 {
     /// <summary>
