@@ -1,0 +1,1 @@
+PHI-3 is a lightweight, state-of-the-art open language model developed by Microsoft. It has been trained on high-quality, reasoning-dense data, making it suitable for tasks such as text generation and conversational AI. The model is available in different configurations, including a "mini" version with 3.3 billion parameters and context lengths of 4K and 128K tokens.

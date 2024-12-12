@@ -1,0 +1,4 @@
+Logs are records of events that occur within systems and applications.
+Kubernetes and AKS generate various logs: application logs, cluster logs, and system logs.
+Log analysis helps identify issues, performance bottlenecks, and security incidents.
+AI-driven log analysis can streamline troubleshooting, reduce time-to-resolution, and improve reliability.

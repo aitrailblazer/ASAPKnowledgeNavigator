@@ -1,0 +1,1 @@
+ONNX (Open Neural Network Exchange) is an open-source format designed to facilitate the interoperability of AI models across various frameworks and tools. It enables developers to train models in one framework and deploy them in another, streamlining the AI development process.

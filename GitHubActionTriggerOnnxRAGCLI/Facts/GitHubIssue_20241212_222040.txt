@@ -1,0 +1,134 @@
+Title: Pod Failure Due to ACI Provider Command Argument Configuration
+
+Body:
+### Analysis
+
+#### Pod Overview:
+- **Pod Name**: eraser-virtual-node-aci-linux-ks96c
+- **Namespace**: kube-system
+
+#### Log Analysis Content:
+### Warnings and Errors:
+- **Error**: ProviderFailed
+  - **Details**: ACI does not support providing args without specifying the command. Please supply both command and args to the pod spec.
+  - **Timestamp**: Not available in the provided log data.
+
+### Recommendations:
+1. **Update Pod Specification:**
+   - Ensure that both the command and args are specified in the pod spec. This is crucial for proper ACI provider compatibility. For instance, specify an explicit command like `command: ["/bin/sh", "-c"]` followed by the args.
+
+2. **Review Container Images:**
+   - Double-check if the container images (`collector`, `remover`, and `trivy-scanner`) support the commands and args being supplied, ensuring they align with best practices for running in Azure Container Instances (ACI).
+
+3. **Enhance Error Logging:**
+   - Implement more detailed logging within the containers to capture any command execution errors explicitly. This will help in diagnosing similar issues in the future.
+
+4. **Consult ACI Documentation:**
+   - Review the latest ACI documentation for any updates or changes in the way command and args should be configured to prevent similar failures. 
+
+5. **Monitor Pod Deployment:**
+   - After making the necessary changes, monitor the pod deployment closely for any other potential issues. Use Kubernetes monitoring tools to track the pod's status and logs in real-time.
+
+6. **Test Configuration Locally:**
+   - Before deploying changes to the production cluster, test the updated configuration in a local environment or a test cluster to ensure that the command and args work seamlessly with the specified containers.
+
+#### Original Log Data:
+```
+Pod: eraser-virtual-node-aci-linux-ks96c
+Namespace: kube-system
+Description:
+Name: eraser-virtual-node-aci-linux-ks96c
+Namespace: kube-system
+Priority: 2000000000
+Priority Class Name: system-cluster-critical
+Service Account: eraser-imagejob-pods
+Node: virtual-node-aci-linux
+Labels: eraser.sh/type=collector
+Annotations: 
+Status: Failed
+Reason: ProviderFailed
+Message: ACI does not support providing args without specifying the command. Please supply both command and args to the pod spec.
+IP: N/A
+Controlled By: PodTemplate/imagejob-6rnpg
+Containers:
+  collector:
+    Image: mcr.microsoft.com/oss/eraser/collector:v1.3.1
+    Ports: 
+    Args: --scan-disabled=false --enable-pprof=false --pprof-port=6060
+    Limits: memory=500Mi
+    Requests: cpu=7m, memory=25Mi
+    Environment:
+      KUBERNETES_SERVICE_HOST: ait-dns-3ss19hej.hcp.eastus2.azmk8s.io
+      KUBERNETES_PORT: tcp://ait-dns-3ss19hej.hcp.eastus2.azmk8s.io:443
+      KUBERNETES_PORT_443_TCP: tcp://ait-dns-3ss19hej.hcp.eastus2.azmk8s.io:443
+      KUBERNETES_PORT_443_TCP_ADDR: ait-dns-3ss19hej.hcp.eastus2.azmk8s.io
+      NODE_NAME: ValueFrom: k8s.Models.V1EnvVarSource
+    Mounts:
+      /run/eraser.sh/shared-data from shared-data (rw)
+      exclude-eraser-system-exclusion from eraser-system-exclusion (rw)
+      /run/cri/cri.sock from runtime-sock-volume (rw)
+      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-vf7rc (ro)
+  remover:
+    Image: mcr.microsoft.com/oss/eraser/remover:v1.3.1
+    Ports: 
+    Args: --log-level=info --enable-pprof=false --pprof-port=6060
+    Limits: memory=30Mi
+    Requests: cpu=0, memory=25Mi
+    Environment:
+      KUBERNETES_SERVICE_HOST: ait-dns-3ss19hej.hcp.eastus2.azmk8s.io
+      KUBERNETES_PORT: tcp://ait-dns-3ss19hej.hcp.eastus2.azmk8s.io:443
+      KUBERNETES_PORT_443_TCP: tcp://ait-dns-3ss19hej.hcp.eastus2.azmk8s.io:443
+      KUBERNETES_PORT_443_TCP_ADDR: ait-dns-3ss19hej.hcp.eastus2.azmk8s.io
+      OTEL_EXPORTER_OTLP_ENDPOINT: ValueFrom: N/A
+      OTEL_SERVICE_NAME: remover
+      NODE_NAME: ValueFrom: k8s.Models.V1EnvVarSource
+    Mounts:
+      /run/eraser.sh/shared-data from shared-data (rw)
+      exclude-eraser-system-exclusion from eraser-system-exclusion (rw)
+      /run/cri/cri.sock from runtime-sock-volume (rw)
+      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-vf7rc (ro)
+  trivy-scanner:
+    Image: mcr.microsoft.com/oss/eraser/eraser-trivy-scanner:v1.3.1
+    Ports: 
+    Args: --config=/config/controller_manager_config.yaml --enable-pprof=false --pprof-port=6060
+    Limits: memory=2Gi
+    Requests: cpu=250m, memory=500Mi
+    Environment:
+      KUBERNETES_SERVICE_HOST: ait-dns-3ss19hej.hcp.eastus2.azmk8s.io
+      KUBERNETES_PORT: tcp://ait-dns-3ss19hej.hcp.eastus2.azmk8s.io:443
+      KUBERNETES_PORT_443_TCP: tcp://ait-dns-3ss19hej.hcp.eastus2.azmk8s.io:443
+      KUBERNETES_PORT_443_TCP_ADDR: ait-dns-3ss19hej.hcp.eastus2.azmk8s.io
+      OTEL_EXPORTER_OTLP_ENDPOINT: ValueFrom: N/A
+      OTEL_SERVICE_NAME: trivy-scanner
+      ERASER_RUNTIME_NAME: containerd
+      CONTAINERD_NAMESPACE: k8s.io
+      NODE_NAME: ValueFrom: k8s.Models.V1EnvVarSource
+    Mounts:
+      /run/eraser.sh/shared-data from shared-data (rw)
+      /config from eraser-config (rw)
+      exclude-eraser-system-exclusion from eraser-system-exclusion (rw)
+      /run/cri/cri.sock from runtime-sock-volume (rw)
+      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-vf7rc (ro)
+Volumes:
+  runtime-sock-volume:
+    Type: HostPath
+    Path: /run/containerd/containerd.sock
+  shared-data:
+    Type: EmptyDir
+  eraser-config:
+    Type: ConfigMap
+    Name: eraser-manager-config
+  eraser-system-exclusion:
+    Type: ConfigMap
+    Name: eraser-system-exclusion
+  kube-api-access-vf7rc:
+    Type: Projected
+Tolerations:
+  - Key: N/A, Effect: N/A, Value: N/A, Toleration Seconds: N/A
+Events:
+  No events found for this pod.
+```
+
+### Summary
+Further investigation into the pod **`eraser-virtual-node-aci-linux-ks96c`** in the namespace **`kube-system`** is recommended based on the above analysis.
+

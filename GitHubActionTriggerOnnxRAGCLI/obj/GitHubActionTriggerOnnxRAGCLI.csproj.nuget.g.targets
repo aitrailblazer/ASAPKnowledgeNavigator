@@ -1,0 +1,11 @@
+﻿<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<Project ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ImportGroup Condition=" '$(ExcludeRestorePackageImports)' != 'true' ">
+    <Import Project="$(NuGetPackageRoot)system.text.json/8.0.5/buildTransitive/net6.0/System.Text.Json.targets" Condition="Exists('$(NuGetPackageRoot)system.text.json/8.0.5/buildTransitive/net6.0/System.Text.Json.targets')" />
+    <Import Project="$(NuGetPackageRoot)microsoft.extensions.logging.abstractions/8.0.2/buildTransitive/net6.0/Microsoft.Extensions.Logging.Abstractions.targets" Condition="Exists('$(NuGetPackageRoot)microsoft.extensions.logging.abstractions/8.0.2/buildTransitive/net6.0/Microsoft.Extensions.Logging.Abstractions.targets')" />
+    <Import Project="$(NuGetPackageRoot)microsoft.ml.onnxruntimegenai.managed/0.5.2/build/net8.0/Microsoft.ML.OnnxRuntimeGenAI.Managed.targets" Condition="Exists('$(NuGetPackageRoot)microsoft.ml.onnxruntimegenai.managed/0.5.2/build/net8.0/Microsoft.ML.OnnxRuntimeGenAI.Managed.targets')" />
+    <Import Project="$(NuGetPackageRoot)microsoft.ml.onnxruntime.managed/1.20.1/build/netstandard2.0/Microsoft.ML.OnnxRuntime.Managed.targets" Condition="Exists('$(NuGetPackageRoot)microsoft.ml.onnxruntime.managed/1.20.1/build/netstandard2.0/Microsoft.ML.OnnxRuntime.Managed.targets')" />
+    <Import Project="$(NuGetPackageRoot)microsoft.ml.onnxruntime/1.20.1/build/netstandard2.1/Microsoft.ML.OnnxRuntime.targets" Condition="Exists('$(NuGetPackageRoot)microsoft.ml.onnxruntime/1.20.1/build/netstandard2.1/Microsoft.ML.OnnxRuntime.targets')" />
+    <Import Project="$(NuGetPackageRoot)microsoft.ml.onnxruntimegenai/0.5.2/build/net8.0/Microsoft.ML.OnnxRuntimeGenAI.targets" Condition="Exists('$(NuGetPackageRoot)microsoft.ml.onnxruntimegenai/0.5.2/build/net8.0/Microsoft.ML.OnnxRuntimeGenAI.targets')" />
+  </ImportGroup>
+</Project>

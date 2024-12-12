@@ -1,0 +1,3 @@
+K8sLogBotRAG is an AI-driven solution designed to streamline log analysis for Azure Kubernetes Service (AKS) clusters.
+It utilizes Retrieval-Augmented Generation (RAG) techniques to provide context-aware responses to log analysis queries.
+K8sLogBotRAG can help operators quickly troubleshoot issues, identify anomalies, and gain insights from logs.

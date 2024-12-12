@@ -1,0 +1,122 @@
+{
+  "format": 1,
+  "restore": {
+    "/Users/constantinevassilev02/MyLocalDocuments/go-projects/K8sLogBotRAG/GitHubActionTriggerOnnxRAGCLI/GitHubActionTriggerOnnxRAGCLI.csproj": {}
+  },
+  "projects": {
+    "/Users/constantinevassilev02/MyLocalDocuments/go-projects/K8sLogBotRAG/GitHubActionTriggerOnnxRAGCLI/GitHubActionTriggerOnnxRAGCLI.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "/Users/constantinevassilev02/MyLocalDocuments/go-projects/K8sLogBotRAG/GitHubActionTriggerOnnxRAGCLI/GitHubActionTriggerOnnxRAGCLI.csproj",
+        "projectName": "GitHubActionTriggerOnnxRAGCLI",
+        "projectPath": "/Users/constantinevassilev02/MyLocalDocuments/go-projects/K8sLogBotRAG/GitHubActionTriggerOnnxRAGCLI/GitHubActionTriggerOnnxRAGCLI.csproj",
+        "packagesPath": "/Users/constantinevassilev02/.nuget/packages/",
+        "outputPath": "/Users/constantinevassilev02/MyLocalDocuments/go-projects/K8sLogBotRAG/GitHubActionTriggerOnnxRAGCLI/obj/",
+        "projectStyle": "PackageReference",
+        "configFilePaths": [
+          "/Users/constantinevassilev02/.nuget/NuGet/NuGet.Config"
+        ],
+        "originalTargetFrameworks": [
+          "net9.0"
+        ],
+        "sources": {
+          "/usr/local/share/dotnet/library-packs": {},
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net9.0": {
+            "targetAlias": "net9.0",
+            "projectReferences": {}
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "all"
+        },
+        "SdkAnalysisLevel": "9.0.100"
+      },
+      "frameworks": {
+        "net9.0": {
+          "targetAlias": "net9.0",
+          "dependencies": {
+            "Microsoft.Extensions.Configuration": {
+              "target": "Package",
+              "version": "[9.0.0, )"
+            },
+            "Microsoft.ML.OnnxRuntime": {
+              "target": "Package",
+              "version": "[1.20.1, )"
+            },
+            "Microsoft.ML.OnnxRuntimeGenAI": {
+              "target": "Package",
+              "version": "[0.5.2, )"
+            },
+            "Microsoft.ML.OnnxRuntimeGenAI.Managed": {
+              "target": "Package",
+              "version": "[0.5.2, )"
+            },
+            "Microsoft.ML.Tokenizers": {
+              "target": "Package",
+              "version": "[1.0.0, )"
+            },
+            "Microsoft.ML.Tokenizers.Data.Cl100kBase": {
+              "target": "Package",
+              "version": "[1.0.0, )"
+            },
+            "Microsoft.SemanticKernel": {
+              "target": "Package",
+              "version": "[1.32.0, )"
+            },
+            "Microsoft.SemanticKernel.Abstractions": {
+              "target": "Package",
+              "version": "[1.32.0, )"
+            },
+            "Microsoft.SemanticKernel.Connectors.InMemory": {
+              "target": "Package",
+              "version": "[1.32.0-preview, )"
+            },
+            "Microsoft.SemanticKernel.Connectors.Onnx": {
+              "target": "Package",
+              "version": "[1.32.0-alpha, )"
+            },
+            "Microsoft.SemanticKernel.Core": {
+              "target": "Package",
+              "version": "[1.32.0, )"
+            },
+            "Microsoft.SemanticKernel.PromptTemplates.Handlebars": {
+              "target": "Package",
+              "version": "[1.32.0, )"
+            },
+            "System.CommandLine": {
+              "target": "Package",
+              "version": "[2.0.0-beta4.22272.1, )"
+            }
+          },
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48",
+            "net481"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "frameworkReferences": {
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/9.0.100/PortableRuntimeIdentifierGraph.json"
+        }
+      }
+    }
+  }
+}
