@@ -15,6 +15,8 @@ using System.Linq; // Add this for LINQ methods
 
 class Program
 {
+     private const string TargetClusterContext = "AIT"; // Specify the target cluster context name
+
     /// <summary>
     /// Entry point of the application.
     /// Validates the provided access code, lists Kubernetes pods, filters out failing ones, describes them,
