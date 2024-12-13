@@ -145,6 +145,7 @@ Monitoring and Logging: Establish robust monitoring to track model performance i
 Feedback Loops: Create mechanisms for stakeholders to provide feedback on model outputs, enabling continuous improvement and alignment with business objectives.
 By following this approach, K8sLogBotRAG can leverage Azure Databricks to enhance its log analysis capabilities, ensuring it remains effective and responsive to evolving patterns within Kubernetes environments.
 
+<<<<<<< Updated upstream
 ## Generating a Native-AOT Application for `osx-arm64`
 
 To generate a Native-AOT application for `osx-arm64`, follow these steps:
@@ -168,3 +169,10 @@ To generate a Native-AOT application for `osx-arm64`, follow these steps:
    ```
 
 This will generate a self-contained, Native-AOT application for the `osx-arm64` runtime.
+=======
+For fast run:
+
+```bash
+dotnet publish -r osx-arm64 --self-contained -c Release
+```
+>>>>>>> Stashed changes

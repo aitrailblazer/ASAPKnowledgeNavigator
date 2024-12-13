@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "wM1UV42X3xY=",
+  "dgSpecHash": "VZWN+DC4cF8=",
   "success": true,
   "projectFilePath": "/Users/constantinevassilev02/MyLocalDocuments/go-projects/K8sLogBotRAG/GitHubActionTriggerOnnxRAGCLI/GitHubActionTriggerOnnxRAGCLI.csproj",
   "expectedPackageFiles": [
@@ -38,6 +38,9 @@
     "/Users/constantinevassilev02/.nuget/packages/microsoft.semantickernel.core/1.32.0/microsoft.semantickernel.core.1.32.0.nupkg.sha512",
     "/Users/constantinevassilev02/.nuget/packages/microsoft.semantickernel.prompttemplates.handlebars/1.32.0/microsoft.semantickernel.prompttemplates.handlebars.1.32.0.nupkg.sha512",
     "/Users/constantinevassilev02/.nuget/packages/openai/2.1.0-beta.2/openai.2.1.0-beta.2.nupkg.sha512",
+    "/Users/constantinevassilev02/.nuget/packages/runtime.any.system.runtime/4.3.0/runtime.any.system.runtime.4.3.0.nupkg.sha512",
+    "/Users/constantinevassilev02/.nuget/packages/runtime.native.system/4.3.0/runtime.native.system.4.3.0.nupkg.sha512",
+    "/Users/constantinevassilev02/.nuget/packages/runtime.unix.system.private.uri/4.3.0/runtime.unix.system.private.uri.4.3.0.nupkg.sha512",
     "/Users/constantinevassilev02/.nuget/packages/stef.validation/0.1.1/stef.validation.0.1.1.nupkg.sha512",
     "/Users/constantinevassilev02/.nuget/packages/system.clientmodel/1.2.1/system.clientmodel.1.2.1.nupkg.sha512",
     "/Users/constantinevassilev02/.nuget/packages/system.commandline/2.0.0-beta4.22272.1/system.commandline.2.0.0-beta4.22272.1.nupkg.sha512",
@@ -46,12 +49,46 @@
     "/Users/constantinevassilev02/.nuget/packages/system.memory.data/6.0.0/system.memory.data.6.0.0.nupkg.sha512",
     "/Users/constantinevassilev02/.nuget/packages/system.numerics.tensors/8.0.0/system.numerics.tensors.8.0.0.nupkg.sha512",
     "/Users/constantinevassilev02/.nuget/packages/system.numerics.vectors/4.5.0/system.numerics.vectors.4.5.0.nupkg.sha512",
+    "/Users/constantinevassilev02/.nuget/packages/system.private.uri/4.3.0/system.private.uri.4.3.0.nupkg.sha512",
     "/Users/constantinevassilev02/.nuget/packages/system.runtime/4.3.1/system.runtime.4.3.1.nupkg.sha512",
     "/Users/constantinevassilev02/.nuget/packages/system.runtime.compilerservices.unsafe/6.0.0/system.runtime.compilerservices.unsafe.6.0.0.nupkg.sha512",
     "/Users/constantinevassilev02/.nuget/packages/system.text.encodings.web/6.0.0/system.text.encodings.web.6.0.0.nupkg.sha512",
     "/Users/constantinevassilev02/.nuget/packages/system.text.json/8.0.5/system.text.json.8.0.5.nupkg.sha512",
     "/Users/constantinevassilev02/.nuget/packages/system.text.regularexpressions/4.3.1/system.text.regularexpressions.4.3.1.nupkg.sha512",
-    "/Users/constantinevassilev02/.nuget/packages/system.threading.tasks.extensions/4.5.4/system.threading.tasks.extensions.4.5.4.nupkg.sha512"
+    "/Users/constantinevassilev02/.nuget/packages/system.threading.tasks.extensions/4.5.4/system.threading.tasks.extensions.4.5.4.nupkg.sha512",
+    "/Users/constantinevassilev02/.nuget/packages/microsoft.netcore.app.runtime.osx-arm64/9.0.0/microsoft.netcore.app.runtime.osx-arm64.9.0.0.nupkg.sha512",
+    "/Users/constantinevassilev02/.nuget/packages/microsoft.aspnetcore.app.runtime.osx-arm64/9.0.0/microsoft.aspnetcore.app.runtime.osx-arm64.9.0.0.nupkg.sha512"
   ],
-  "logs": []
+  "logs": [
+    {
+      "code": "NU1903",
+      "level": "Warning",
+      "warningLevel": 1,
+      "message": "Package 'System.Private.Uri' 4.3.0 has a known high severity vulnerability, https://github.com/advisories/GHSA-5f2m-466j-3848",
+      "libraryId": "System.Private.Uri",
+      "targetGraphs": [
+        "net9.0/osx-arm64"
+      ]
+    },
+    {
+      "code": "NU1902",
+      "level": "Warning",
+      "warningLevel": 1,
+      "message": "Package 'System.Private.Uri' 4.3.0 has a known moderate severity vulnerability, https://github.com/advisories/GHSA-x5qj-9vmx-7g6g",
+      "libraryId": "System.Private.Uri",
+      "targetGraphs": [
+        "net9.0/osx-arm64"
+      ]
+    },
+    {
+      "code": "NU1903",
+      "level": "Warning",
+      "warningLevel": 1,
+      "message": "Package 'System.Private.Uri' 4.3.0 has a known high severity vulnerability, https://github.com/advisories/GHSA-xhfc-gr8f-ffwc",
+      "libraryId": "System.Private.Uri",
+      "targetGraphs": [
+        "net9.0/osx-arm64"
+      ]
+    }
+  ]
 }
