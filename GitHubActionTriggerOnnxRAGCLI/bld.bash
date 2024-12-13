@@ -56,5 +56,7 @@ cat > Facts/BGE-MICRO-V2.txt <<EOF
 BGE-MICRO-V2 is a compact embedding model designed for generating dense vector representations of text. These embeddings are useful for tasks like clustering and semantic search. Due to its small size, BGE-MICRO-V2 is well-suited for deployment on devices with limited resources, offering fast inference times with a slight trade-off in accuracy compared to larger models.
 EOF
 
+# Publish the application for osx-arm64
+dotnet publish -r osx-arm64 --self-contained -c Release
 
 echo "Facts directory and files created successfully."

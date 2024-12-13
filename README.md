@@ -144,3 +144,27 @@ Version Control: Use version control systems to track changes in data, model par
 Monitoring and Logging: Establish robust monitoring to track model performance in production, and implement logging mechanisms to capture any issues or anomalies.
 Feedback Loops: Create mechanisms for stakeholders to provide feedback on model outputs, enabling continuous improvement and alignment with business objectives.
 By following this approach, K8sLogBotRAG can leverage Azure Databricks to enhance its log analysis capabilities, ensuring it remains effective and responsive to evolving patterns within Kubernetes environments.
+
+## Generating a Native-AOT Application for `osx-arm64`
+
+To generate a Native-AOT application for `osx-arm64`, follow these steps:
+
+1. **Publish the Application:**
+
+   ```bash
+   dotnet publish -r osx-arm64 --self-contained -c Release
+   ```
+
+2. **Verify the Output:**
+
+   After publishing, verify that the output directory contains the necessary files for the `osx-arm64` runtime.
+
+3. **Run the Application:**
+
+   Navigate to the output directory and run the application:
+
+   ```bash
+   ./YourApplicationName
+   ```
+
+This will generate a self-contained, Native-AOT application for the `osx-arm64` runtime.
