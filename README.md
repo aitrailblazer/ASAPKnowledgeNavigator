@@ -117,3 +117,28 @@ Once the analysis is complete, review the results posted as comments in the rele
 ## Workflow Configuration
 
 Configure the workflow to suit your needs by modifying the GitHub Actions YAML files in the .github/workflows directory.
+
+
+## Generating a Native-AOT Application for `osx-arm64`
+
+To generate a Native-AOT application for `osx-arm64`, follow these steps:
+
+1. **Publish the Application:**
+
+   ```bash
+   dotnet publish -r osx-arm64 --self-contained -c Release
+   ```
+
+2. **Verify the Output:**
+
+   After publishing, verify that the output directory contains the necessary files for the `osx-arm64` runtime.
+
+3. **Run the Application:**
+
+   Navigate to the output directory and run the application:
+
+   ```bash
+   ./YourApplicationName
+   ```
+
+This will generate a self-contained, Native-AOT application for the `osx-arm64` runtime.
