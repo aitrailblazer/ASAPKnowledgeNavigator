@@ -125,6 +125,16 @@ class Program
     private static async Task<List<V1Pod>> GetFailingPodsAsync()
     {
         var config = KubernetesClientConfiguration.BuildConfigFromConfigFile();
+        Console.WriteLine($"Using Kubernetes context: {config.CurrentContext}");
+
+        // Validate the context
+        if (config.CurrentContext != TargetClusterContext)
+        {
+            throw new InvalidOperationException(
+                $"Expected cluster context '{TargetClusterContext}', but found '{config.CurrentContext}'. Please switch to the correct context using `kubectl config use-context {TargetClusterContext}`."
+            );
+        }
+
         var client = new Kubernetes(config);
 
         var podList = await client.ListPodForAllNamespacesAsync();
@@ -554,8 +564,8 @@ Create:
 
     public class AnalysisResult
     {
-        public string IssueTitle { get; set; }
-        public string LogAnalysisContent { get; set; }
+        public string IssueTitle { get; set; } = string.Empty;
+        public string LogAnalysisContent { get; set; } = string.Empty;
     }
 
 }

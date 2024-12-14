@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "cacQatHceH4=",
+  "dgSpecHash": "d5QMiisGjvY=",
   "success": true,
-  "projectFilePath": "/Users/constantinevassilev02/MyLocalDocuments/go-projects/K8sLogBotRAG/GitHubActionTriggerCLI/GitHubActionTriggerCLI.csproj",
+  "projectFilePath": "/Users/constantinevassilev02/MyLocalDocuments/go-projects/RAG-GPT-Insight/GitHubActionTriggerCLI/GitHubActionTriggerCLI.csproj",
   "expectedPackageFiles": [
     "/Users/constantinevassilev02/.nuget/packages/azure.ai.openai/2.1.0-beta.2/azure.ai.openai.2.1.0-beta.2.nupkg.sha512",
     "/Users/constantinevassilev02/.nuget/packages/azure.core/1.44.1/azure.core.1.44.1.nupkg.sha512",

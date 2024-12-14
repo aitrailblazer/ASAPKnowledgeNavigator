@@ -1,6 +1,6 @@
-# InsightGPT
+# RAG-GPT-Insight
 
-InsightGPT is an AI-driven solution designed to streamline log analysis for Azure Kubernetes Service (AKS) clusters. By integrating a C# application with GitHub Actions, it provides automated retrieval and intelligent analysis of logs, delivering results directly to your GitHub repository for seamless collaboration. This repository includes multiple tools, each serving a specific purpose to enhance the monitoring capabilities of developers and DevOps teams.
+RAG-GPT-Insight is an AI-driven solution designed to streamline log analysis for Azure Kubernetes Service (AKS) clusters. By integrating a C# application with GitHub Actions, it provides automated retrieval and intelligent analysis of logs, delivering results directly to your GitHub repository for seamless collaboration. This repository includes multiple tools, each serving a specific purpose to enhance the monitoring capabilities of developers and DevOps teams.
 
 ## Table of Contents
 

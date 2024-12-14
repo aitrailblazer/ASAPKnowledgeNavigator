@@ -98,7 +98,15 @@ The workflow is configured to run automatically on a push to the `main` branch o
 
 ## Example Command
 
+
+The app assumes your AKS context is AIT:
+
+```sh
+kubectl config use-context AIT
+```
+
 To run the application manually, you can use the following command:
 
 ```sh
 dotnet run --project ./path/to/your/Project.csproj -- <accessCode>
+```

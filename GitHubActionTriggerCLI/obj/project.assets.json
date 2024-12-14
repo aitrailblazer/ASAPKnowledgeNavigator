@@ -2199,11 +2199,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "/Users/constantinevassilev02/MyLocalDocuments/go-projects/K8sLogBotRAG/GitHubActionTriggerCLI/GitHubActionTriggerCLI.csproj",
+      "projectUniqueName": "/Users/constantinevassilev02/MyLocalDocuments/go-projects/RAG-GPT-Insight/GitHubActionTriggerCLI/GitHubActionTriggerCLI.csproj",
       "projectName": "GitHubActionTriggerCLI",
-      "projectPath": "/Users/constantinevassilev02/MyLocalDocuments/go-projects/K8sLogBotRAG/GitHubActionTriggerCLI/GitHubActionTriggerCLI.csproj",
+      "projectPath": "/Users/constantinevassilev02/MyLocalDocuments/go-projects/RAG-GPT-Insight/GitHubActionTriggerCLI/GitHubActionTriggerCLI.csproj",
       "packagesPath": "/Users/constantinevassilev02/.nuget/packages/",
-      "outputPath": "/Users/constantinevassilev02/MyLocalDocuments/go-projects/K8sLogBotRAG/GitHubActionTriggerCLI/obj/",
+      "outputPath": "/Users/constantinevassilev02/MyLocalDocuments/go-projects/RAG-GPT-Insight/GitHubActionTriggerCLI/obj/",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "/Users/constantinevassilev02/.nuget/NuGet/NuGet.Config"
