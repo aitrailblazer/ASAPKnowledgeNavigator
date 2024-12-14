@@ -145,7 +145,10 @@ Monitoring and Logging: Establish robust monitoring to track model performance i
 Feedback Loops: Create mechanisms for stakeholders to provide feedback on model outputs, enabling continuous improvement and alignment with business objectives.
 By following this approach, K8sLogBotRAG can leverage Azure Databricks to enhance its log analysis capabilities, ensuring it remains effective and responsive to evolving patterns within Kubernetes environments.
 
-<<<<<<< Updated upstream
+Native-AOT (Ahead-of-Time) is a feature in .NET that allows for the compilation of .NET applications 
+directly to native code, bypassing the need for a Just-In-Time (JIT) compiler at runtime. 
+This can result in faster startup times and reduced memory usage.
+
 ## Generating a Native-AOT Application for `osx-arm64`
 
 To generate a Native-AOT application for `osx-arm64`, follow these steps:
@@ -169,10 +172,3 @@ To generate a Native-AOT application for `osx-arm64`, follow these steps:
    ```
 
 This will generate a self-contained, Native-AOT application for the `osx-arm64` runtime.
-=======
-For fast run:
-
-```bash
-dotnet publish -r osx-arm64 --self-contained -c Release
-```
->>>>>>> Stashed changes

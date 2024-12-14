@@ -22,6 +22,7 @@ class Program
     /// Validates the provided access code, lists Kubernetes pods, filters out failing ones, describes them,
     /// generates a GPT-based analysis, and creates separate GitHub issues for each failing pod.
     /// </summary>
+    /// <param name="args">Command-line arguments. The first argument should be the access code.</param>
     static async Task Main(string[] args)
     {
         if (args.Length < 1)
@@ -291,7 +292,7 @@ class Program
         }
     }
 
-    // Helper method to format key-value pairs
+
     private static string FormatKeyValuePairs(IDictionary<string, string>? keyValuePairs)
     {
         if (keyValuePairs == null || keyValuePairs.Count == 0)
