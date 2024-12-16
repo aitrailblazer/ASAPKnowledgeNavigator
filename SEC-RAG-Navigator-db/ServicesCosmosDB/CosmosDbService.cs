@@ -38,12 +38,7 @@ public class CosmosDbService
     public CosmosDbService(
         string endpoint,
         string databaseName,
-        string chatContainerName,
-        string cacheContainerName,
-        string organizerContainerName,
         string knowledgeBaseContainerName,
-        string productContainerName,
-        string productDataSourceURI,
         ILogger<CosmosDbService> logger)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -66,7 +61,6 @@ public class CosmosDbService
             _logger.LogInformation("Retrieving database: {DatabaseName}", databaseName);
             Database database = client.GetDatabase(databaseName) ?? throw new ArgumentException("Database not found.");
 
-            _logger.LogInformation("Retrieving containers: {ChatContainer}, {CacheContainer}, {OrganizerContainer}, {ProductContainer}", chatContainerName, cacheContainerName, organizerContainerName, productContainerName);
             _knowledgeBaseContainer = database.GetContainer(knowledgeBaseContainerName); // Initialize knowledge base container
 
             _logger.LogInformation("CosmosDbService initialized successfully.");

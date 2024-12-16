@@ -16,6 +16,9 @@ using Microsoft.Extensions.Options;
 
 class Program
 {
+    private CosmosClient cosmosClient = null!;
+    private Database database = null!;
+    private Container container = null!;
     static async Task Main(string[] args)
     {
         if (args.Length == 0)
@@ -47,10 +50,10 @@ class Program
                 // Register CosmosClient
                 services.AddSingleton<CosmosClient>(provider =>
                 {
-                    string endpointUri = GetEnvironmentVariable("COSMOS_DB_ENDPOINT");
+                    string azureCosmosDbEndpointUri = GetEnvironmentVariable("COSMOS_DB_ENDPOINT");
                     string primaryKey = GetEnvironmentVariable("COSMOS_DB_PRIMARY_KEY");
 
-                    return new CosmosClientBuilder(endpointUri, primaryKey)
+                    return new CosmosClientBuilder(azureCosmosDbEndpointUri, primaryKey)
                         .WithApplicationName("SEC-RAG-Navigator")
                         .Build();
                 });
@@ -62,13 +65,29 @@ class Program
                 RegisterSemanticKernelService(services);
 
                 // Register CosmosDbService
-                services.AddScoped<CosmosDbService>(provider =>
+                services.AddSingleton<CosmosDbService>((provider) =>
                 {
-                    string databaseId = GetEnvironmentVariable("COSMOS_DB_DATABASE_ID");
-                    var logger = provider.GetRequiredService<ILogger<CosmosDbService>>();
-                    var cosmosClient = provider.GetRequiredService<CosmosClient>();
-                    return new CosmosDbService(cosmosClient, databaseId, logger);
+                    var cosmosDbOptions = provider.GetRequiredService<IOptions<CosmosDb>>();
+                    if (cosmosDbOptions is null)
+                    {
+                        throw new ArgumentException($"{nameof(IOptions<CosmosDb>)} was not resolved through dependency injection.");
+                    }
+                    else
+                    {
+                        var logger = provider.GetRequiredService<ILogger<CosmosDbService>>(); // Retrieve the logger
+                        string azureCosmosDbEndpointUri = GetEnvironmentVariable("COSMOS_DB_ENDPOINT");
+                        string AzureCosmosDBNoSQLDatabaseName  = "asapdb";
+                        string knowledgeBaseContainerName= "secrag"; // rag
+
+                        return new CosmosDbService(
+                            endpoint: azureCosmosDbEndpointUri ?? string.Empty,
+                            databaseName: AzureCosmosDBNoSQLDatabaseName ?? string.Empty,
+                            knowledgeBaseContainerName: knowledgeBaseContainerName ?? string.Empty,
+                            logger: logger // Pass the logger to the constructor
+                        );
+                    }
                 });
+
 
                 // Register Semantic Kernel and related services
                 RegisterKernelServices(context, services);
@@ -182,12 +201,12 @@ class Program
 
 public class SEC_RAG_NavigatorService
 {
-    private readonly CosmosDbService _cosmosDbService;
+    private readonly CosmosDbServiceWorking _cosmosDbServiceWorking;
     private readonly ILogger<SEC_RAG_NavigatorService> _logger;
 
-    public SEC_RAG_NavigatorService(CosmosDbService cosmosDbService, ILogger<SEC_RAG_NavigatorService> logger)
+    public SEC_RAG_NavigatorService(CosmosDbServiceWorking cosmosDbServiceWorking, ILogger<SEC_RAG_NavigatorService> logger)
     {
-        _cosmosDbService = cosmosDbService ?? throw new ArgumentNullException(nameof(cosmosDbService));
+        _cosmosDbServiceWorking = cosmosDbServiceWorking ?? throw new ArgumentNullException(nameof(cosmosDbServiceWorking));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
@@ -201,8 +220,8 @@ public class SEC_RAG_NavigatorService
             {
                 string containerName = args[1];
                 List<string> partitionKeyPaths = new List<string> { "/tenantId", "/userId", "/categoryId" };
-                await _cosmosDbService.CreateDatabaseAsync();
-                await _cosmosDbService.CreateContainerAsync(
+                await _cosmosDbServiceWorking.CreateDatabaseAsync();
+                await _cosmosDbServiceWorking.CreateContainerAsync(
                     containerName,
                     "/vectors",
                     partitionKeyPaths,
@@ -212,7 +231,7 @@ public class SEC_RAG_NavigatorService
             }
             else if (command == "list-containers")
             {
-                await _cosmosDbService.ListDatabasesAndContainersAsync();
+                await _cosmosDbServiceWorking.ListDatabasesAndContainersAsync();
             }
             else
             {
@@ -235,13 +254,13 @@ public class SEC_RAG_NavigatorService
     }
 }
 
-public class CosmosDbService
+public class CosmosDbServiceWorking
 {
     private readonly CosmosClient _cosmosClient;
     private readonly string _databaseId;
-    private readonly ILogger<CosmosDbService> _logger;
+    private readonly ILogger<CosmosDbServiceWorking> _logger;
 
-    public CosmosDbService(CosmosClient cosmosClient, string databaseId, ILogger<CosmosDbService> logger)
+    public CosmosDbServiceWorking(CosmosClient cosmosClient, string databaseId, ILogger<CosmosDbServiceWorking> logger)
     {
         _cosmosClient = cosmosClient ?? throw new ArgumentNullException(nameof(cosmosClient));
         _databaseId = databaseId ?? throw new ArgumentNullException(nameof(databaseId));
