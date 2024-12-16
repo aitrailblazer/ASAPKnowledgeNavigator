@@ -1,6 +1,5 @@
 ﻿// Copyright (c) AITrailblazer. All rights reserved.
 
-namespace VectorStoreRAG;
 
 /// <summary>
 /// Class for generating unique keys via a provided function.

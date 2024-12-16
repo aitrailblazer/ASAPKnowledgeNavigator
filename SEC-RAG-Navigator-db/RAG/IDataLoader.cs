@@ -1,6 +1,5 @@
 ﻿// Copyright (c) AITrailblazer. All rights reserved.
 
-namespace VectorStoreRAG;
 
 /// <summary>
 /// Interface for loading data into a data store.

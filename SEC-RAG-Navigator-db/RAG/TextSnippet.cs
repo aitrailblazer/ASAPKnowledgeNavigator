@@ -2,7 +2,6 @@
 
 using Microsoft.Extensions.VectorData;
 
-namespace VectorStoreRAG;
 
 /// <summary>
 /// Data model for storing a section of text with an embedding and an optional reference link.

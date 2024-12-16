@@ -10,12 +10,10 @@ using Microsoft.Azure.Cosmos;
 using PartitionKey = Microsoft.Azure.Cosmos.PartitionKey;
 using Cosmos.Copilot.Models;
 
-using Cosmos.Copilot.Services;
 using UglyToad.PdfPig;
 using UglyToad.PdfPig.Content;
 using UglyToad.PdfPig.DocumentLayoutAnalysis.PageSegmenter;
 
-namespace VectorStoreRAG;
 
 /// <summary>
 /// Class that loads text from a PDF file into a vector store.

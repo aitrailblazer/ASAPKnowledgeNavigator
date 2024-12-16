@@ -11,8 +11,6 @@ using Microsoft.Extensions.Logging;
 
 //using AITrailblazer.net.Services;
 
-namespace Cosmos.Copilot.Services;
-
 /// <summary>
 /// Semantic Kernel implementation for Azure OpenAI.
 /// </summary>

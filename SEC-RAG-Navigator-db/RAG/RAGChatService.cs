@@ -8,7 +8,6 @@ using Microsoft.SemanticKernel.Data;
 using Microsoft.SemanticKernel.PromptTemplates.Handlebars;
 using VectorStoreRAG.Options;
 
-namespace VectorStoreRAG;
 
 /// <summary>
 /// Main service class for the application.

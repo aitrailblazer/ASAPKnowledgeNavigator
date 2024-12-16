@@ -12,19 +12,13 @@ using Container = Microsoft.Azure.Cosmos.Container;
 using PartitionKey = Microsoft.Azure.Cosmos.PartitionKey;
 using Microsoft.Azure.Cosmos.Linq;
 
-namespace Cosmos.Copilot.Services;
 
 /// <summary>
 /// Service to access Azure Cosmos DB for NoSQL.
 /// </summary>
 public class CosmosDbService
 {
-    private readonly Container _chatContainer;
-    private readonly Container _cacheContainer;
-    private readonly Container _organizerContainer;
     private readonly Container _knowledgeBaseContainer;
-    private readonly Container _productContainer;
-    private readonly string _productDataSourceURI;
     private readonly ILogger<CosmosDbService> _logger;
 
     /// <summary>
@@ -55,17 +49,6 @@ public class CosmosDbService
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _logger.LogInformation("Initializing CosmosDbService.");
 
-        ArgumentNullException.ThrowIfNullOrEmpty(endpoint, nameof(endpoint));
-        ArgumentNullException.ThrowIfNullOrEmpty(databaseName, nameof(databaseName));
-        ArgumentNullException.ThrowIfNullOrEmpty(chatContainerName, nameof(chatContainerName));
-        ArgumentNullException.ThrowIfNullOrEmpty(cacheContainerName, nameof(cacheContainerName));
-        ArgumentNullException.ThrowIfNullOrEmpty(organizerContainerName);
-        ArgumentNullException.ThrowIfNullOrEmpty(knowledgeBaseContainerName);
-
-        ArgumentNullException.ThrowIfNullOrEmpty(productContainerName, nameof(productContainerName));
-        ArgumentNullException.ThrowIfNullOrEmpty(productDataSourceURI, nameof(productDataSourceURI));
-
-        _productDataSourceURI = productDataSourceURI;
 
         CosmosSerializationOptions options = new()
         {
@@ -84,11 +67,7 @@ public class CosmosDbService
             Database database = client.GetDatabase(databaseName) ?? throw new ArgumentException("Database not found.");
 
             _logger.LogInformation("Retrieving containers: {ChatContainer}, {CacheContainer}, {OrganizerContainer}, {ProductContainer}", chatContainerName, cacheContainerName, organizerContainerName, productContainerName);
-            _chatContainer = database.GetContainer(chatContainerName) ?? throw new ArgumentException("Chat container not found.");
-            _cacheContainer = database.GetContainer(cacheContainerName) ?? throw new ArgumentException("Cache container not found.");
-            _organizerContainer = database.GetContainer(organizerContainerName) ?? throw new ArgumentException("Cache container not found.");
             _knowledgeBaseContainer = database.GetContainer(knowledgeBaseContainerName); // Initialize knowledge base container
-            _productContainer = database.GetContainer(productContainerName) ?? throw new ArgumentException("Product container not found.");
 
             _logger.LogInformation("CosmosDbService initialized successfully.");
         }
