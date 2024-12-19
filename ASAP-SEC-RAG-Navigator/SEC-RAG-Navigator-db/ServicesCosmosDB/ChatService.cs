@@ -9,6 +9,7 @@ using Newtonsoft.Json;
 using PartitionKey = Microsoft.Azure.Cosmos.PartitionKey;
 using Microsoft.Azure.Cosmos;
 using System.Diagnostics;
+using System.Text;
 
 
 public class ChatService
@@ -58,7 +59,6 @@ public class ChatService
         //_maxConversationTokens, _cacheSimilarityScore, _productMaxResults);
     }
 
-
     public async Task<(string completion, string? title)> GetKnowledgeBaseCompletionAsync(
         string tenantId,
         string userId,
@@ -66,8 +66,6 @@ public class ChatService
         string promptText,
         double similarityScore)
     {
-        //_logger.LogInformation("Generating knowledge base completion for TenantId={TenantId}, UserId={UserId}, CategoryId={CategoryId}.", tenantId, userId, categoryId ?? "None");
-
         try
         {
             // Validate inputs
@@ -76,46 +74,116 @@ public class ChatService
 
             // Generate embeddings for the prompt
             float[] promptVectors = await _semanticKernelService.GetEmbeddingsAsync(promptText);
-            _logger.LogDebug("Embeddings generated for the prompt.");
+            _logger.LogInformation("Embeddings generated for the prompt.");
 
             // Generate keywords from promptText
             string[] searchTerms = GenerateKeywords(promptText);
 
-            // Search for the closest knowledge base item
-            KnowledgeBaseItem? closestItem = await _cosmosDbService.SearchKnowledgeBaseAsync(
+            // Search for knowledge base items
+            List<KnowledgeBaseItem> items = await _cosmosDbService.SearchKnowledgeBaseAsync(
                 vectors: promptVectors,
                 tenantId: tenantId,
                 userId: userId,
                 categoryId: categoryId,
                 similarityScore: similarityScore,
-                searchTerms: searchTerms);
+                searchTerms: searchTerms
+            );
 
-            if (closestItem == null)
+            if (items == null || items.Count == 0)
             {
                 _logger.LogInformation("No similar knowledge base items found.");
                 return (string.Empty, null);
             }
 
-            _logger.LogDebug("Found closest item: {Title}.", closestItem.Title);
+            // Generate completions for all items and combine results
+            var completions = new List<string>();
 
-            // Generate completion using the found item
-            var contextWindow = new List<KnowledgeBaseItem> { closestItem }; // Create context window with the closest item
-            (string generatedCompletion, int tokens) = await _semanticKernelService.GetRagKnowledgeBaseCompletionAsync<KnowledgeBaseItem>(
-                categoryId: categoryId ?? "",
-                contextWindow: contextWindow,
-                contextData: closestItem,
-                useChatHistory: false);
+            foreach (var item in items)
+            {
+                _logger.LogInformation("Processing item: {Title}", item.Title);
 
-            //_logger.LogInformation("Completion generated for knowledge base.");
+                var (generatedCompletion, _) = await _semanticKernelService.GetASAPQuick<KnowledgeBaseItem>(
+                    input: promptText,
+                    contextData: item
+                );
+                // Log the intermediate generated completion
+                _logger.LogInformation("Intermediate Completion for {Title}: {Completion}", item.Title, generatedCompletion);
 
-            return (generatedCompletion, closestItem.Title);
+                completions.Add(generatedCompletion);
+            }
+
+            // Combine all completions into a single result
+            string combinedCompletion = string.Join("\n\n", completions);
+
+            _logger.LogInformation("Completion generated for all knowledge base items.");
+
+            // Return the combined result and title of the first item
+            return (combinedCompletion, items.First().Title);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error generating knowledge base completion for TenantId={TenantId}, UserId={UserId}, CategoryId={CategoryId}.", tenantId, userId, categoryId ?? "None");
+            _logger.LogError(ex, "Error generating knowledge base completion.");
             throw;
         }
     }
+    /*
+        public async Task<(string completion, string? title)> GetKnowledgeBaseCompletionAsync01(
+            string tenantId,
+            string userId,
+            string categoryId,
+            string promptText,
+            double similarityScore)
+        {
+            //_logger.LogInformation("Generating knowledge base completion for TenantId={TenantId}, UserId={UserId}, CategoryId={CategoryId}.", tenantId, userId, categoryId ?? "None");
+
+            try
+            {
+                // Validate inputs
+                ArgumentNullException.ThrowIfNull(tenantId, nameof(tenantId));
+                ArgumentNullException.ThrowIfNull(userId, nameof(userId));
+
+                // Generate embeddings for the prompt
+                float[] promptVectors = await _semanticKernelService.GetEmbeddingsAsync(promptText);
+                _logger.LogInformation("GetKnowledgeBaseCompletionAsync Embeddings generated for the prompt.");
+
+                // Generate keywords from promptText
+                string[] searchTerms = GenerateKeywords(promptText);
+
+                // Search for the closest knowledge base item
+                KnowledgeBaseItem? closestItem = await _cosmosDbService.SearchKnowledgeBaseAsync(
+                    vectors: promptVectors,
+                    tenantId: tenantId,
+                    userId: userId,
+                    categoryId: categoryId,
+                    similarityScore: similarityScore,
+                    searchTerms: searchTerms);
+
+                if (closestItem == null)
+                {
+                    _logger.LogInformation("GetKnowledgeBaseCompletionAsync No similar knowledge base items found.");
+                    return (string.Empty, null);
+                }
+
+                _logger.LogDebug("GetKnowledgeBaseCompletionAsync Found closest item: {Title}.", closestItem.Title);
+
+                // Generate completion using the found item
+                var contextWindow = new List<KnowledgeBaseItem> { closestItem }; // Create context window with the closest item
+                (string generatedCompletion, int tokens) = await _semanticKernelService.GetASAPQuick<KnowledgeBaseItem>(
+                    input: promptText,
+                    contextData: closestItem
+                    );
+
+                _logger.LogInformation("GetKnowledgeBaseCompletionAsync Completion generated for knowledge base.");
+
+                return (generatedCompletion, closestItem.Title);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "GetKnowledgeBaseCompletionAsync Error generating knowledge base completion for TenantId={TenantId}, UserId={UserId}, CategoryId={CategoryId}.", tenantId, userId, categoryId ?? "None");
+                throw;
+            }
+        }
+        */
     private string[] GenerateKeywords(string promptText)
     {
         if (string.IsNullOrWhiteSpace(promptText))

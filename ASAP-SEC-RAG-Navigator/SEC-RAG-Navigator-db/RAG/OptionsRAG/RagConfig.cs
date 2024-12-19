@@ -7,7 +7,7 @@ namespace VectorStoreRAG.Options;
 /// <summary>
 /// Contains settings to control the RAG experience.
 /// </summary>
-internal sealed class RagConfig
+public class RagConfig
 {
     public const string ConfigSectionName = "Rag";
 

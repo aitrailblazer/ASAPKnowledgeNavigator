@@ -4,7 +4,7 @@
 /// <summary>
 /// Interface for loading data into a data store.
 /// </summary>
-internal interface IDataLoader
+public interface IDataLoader
 {
     /// <summary>
     /// Load the text from a PDF stream into the data store.

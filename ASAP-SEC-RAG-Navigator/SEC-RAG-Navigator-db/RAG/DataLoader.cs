@@ -19,7 +19,7 @@ using UglyToad.PdfPig.DocumentLayoutAnalysis.PageSegmenter;
 /// Class that loads text from a PDF file into a vector store.
 /// </summary>
 /// <typeparam name="TKey">The type of the data model key.</typeparam>
-internal sealed class DataLoader<TKey>(
+public class DataLoader<TKey>(
     IVectorStoreRecordCollection<TKey, TextSnippet<TKey>> vectorStoreRecordCollection,
     ITextEmbeddingGenerationService textEmbeddingGenerationService,
     CosmosDbService cosmosDbService,

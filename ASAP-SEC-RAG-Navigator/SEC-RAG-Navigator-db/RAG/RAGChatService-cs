@@ -18,7 +18,7 @@ using VectorStoreRAG.Options;
 /// <param name="kernel">Used to make requests to the LLM.</param>
 /// <param name="ragConfigOptions">The configuration options for the application.</param>
 /// <param name="appShutdownCancellationTokenSource">Used to gracefully shut down the entire application when cancelled.</param>
-internal sealed class RAGChatService<TKey>(
+public class RAGChatService<TKey>(
     IDataLoader dataLoader,
     VectorStoreTextSearch<TextSnippet<TKey>> vectorStoreTextSearch,
     Kernel kernel,
@@ -36,7 +36,7 @@ internal sealed class RAGChatService<TKey>(
     public Task StartAsync(CancellationToken cancellationToken)
     {
         // Explicitly provide the file path as an argument
-        var filePaths = new[] { "semantic-kernel.pdf" };
+        var filePaths = new[] { "tsla-20231231.htm.html.pdf" };
         var tenantID = "1234";
         var userID = "5678";
 

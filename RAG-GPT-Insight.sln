@@ -1,0 +1,42 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.5.002.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GitHubActionTriggerCLI", "GitHubActionTriggerCLI\GitHubActionTriggerCLI.csproj", "{7361AB2D-5AF6-45C3-A134-DF05915B4B86}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GitHubActionTriggerOnnxRAGCLI", "GitHubActionTriggerOnnxRAGCLI\GitHubActionTriggerOnnxRAGCLI.csproj", "{6290D516-0E08-4039-B81A-CF442AB6D72A}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ASAP SEC Intel", "ASAP SEC Intel", "{1F3980E8-3D46-4863-870B-A31391298558}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SEC-RAG-Navigator-db", "ASAP SEC Intel\SEC-RAG-Navigator-db\SEC-RAG-Navigator-db.csproj", "{46F389ED-F18A-450D-A16C-05D3347B385A}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{7361AB2D-5AF6-45C3-A134-DF05915B4B86}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7361AB2D-5AF6-45C3-A134-DF05915B4B86}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7361AB2D-5AF6-45C3-A134-DF05915B4B86}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7361AB2D-5AF6-45C3-A134-DF05915B4B86}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6290D516-0E08-4039-B81A-CF442AB6D72A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6290D516-0E08-4039-B81A-CF442AB6D72A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6290D516-0E08-4039-B81A-CF442AB6D72A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6290D516-0E08-4039-B81A-CF442AB6D72A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{46F389ED-F18A-450D-A16C-05D3347B385A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{46F389ED-F18A-450D-A16C-05D3347B385A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{46F389ED-F18A-450D-A16C-05D3347B385A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{46F389ED-F18A-450D-A16C-05D3347B385A}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{46F389ED-F18A-450D-A16C-05D3347B385A} = {1F3980E8-3D46-4863-870B-A31391298558}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {1C415B96-3817-4049-844C-FF0812687AFA}
+	EndGlobalSection
+EndGlobal

@@ -7,7 +7,7 @@ using Microsoft.Extensions.VectorData;
 /// Data model for storing a section of text with an embedding and an optional reference link.
 /// </summary>
 /// <typeparam name="TKey">The type of the data model key.</typeparam>
-internal sealed class TextSnippet<TKey>
+public class TextSnippet<TKey>
 {
     [VectorStoreRecordKey]
     public required TKey Key { get; set; }
