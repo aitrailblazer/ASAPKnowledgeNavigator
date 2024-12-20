@@ -1,82 +1,86 @@
-# Project Details
+### Inspiration  
+Retrieval-Augmented Generation (RAG) demonstrates its versatility by addressing two key challenges with Azure Cosmos NoSQL DiskANN technology:
 
-## Inspiration
+Kubernetes Pod Failure Detection:
 
-The idea for RAG-GPT-Insight was sparked by the growing complexity of managing Kubernetes clusters, particularly within Azure environments. As organizations expand, the volume of logs generated can become daunting. Identifying a need for an automated solution to fetch and analyze these logs while providing actionable insights led to the creation of RAG-GPT-Insight.
+The GitHubActionTriggerCLI tool analyzes failing pod logs in Azure environments using GPT-based models. By leveraging DiskANN for semantic search, it identifies root causes, generates diagnostics, and creates GitHub issues automatically—streamlining resolution without manual intervention.
 
-## What it does
+Insights from SEC EDGAR Filings:
 
-RAG-GPT-Insight includes multiple tools designed to simplify Kubernetes log management and improve question-answering capabilities in Azure settings:
+The ASAP SEC-RAG-Navigator processes financial data via SEC APIs using RAG techniques combined with DiskANN's precision. It transforms complex regulatory documents into concise insights while ensuring privacy and compliance.
+Azure Cosmos NoSQL DiskANN plays a pivotal role in both cases by enabling efficient semantic search and precise information retrieval, enhancing decision-making across technical and regulatory domains.
 
-### GitHubActionTriggerCLI
+### What it does  
+RAG-GPT-Insight applies RAG’s flexibility to solve two major challenges:  
 
-GitHubActionTriggerCLI is a C# application designed to analyze Kubernetes pods and create GitHub issues for failing pods. This tool integrates with GitHub Actions to automate the process of identifying and reporting issues in your Kubernetes cluster. It performs the following tasks:
-- Validates an access code.
-- Lists Kubernetes pods and filters out failing ones.
-- Describes the failing pods.
-- Generates a GPT-based analysis for each failing pod.
-- Creates GitHub issues for each failing pod with the analysis results.
+1. **Automating Kubernetes Pod Failure Detection**:  
+   - Utilizing the GitHubActionTriggerCLI tool, failing Kubernetes pod logs in Azure environments are analyzed using GPT-based models. This process pinpoints root causes, generates detailed diagnostics, and automatically creates GitHub issues for each failure—enabling teams to resolve problems swiftly without manual log analysis.
 
-### GitHubActionTriggerOnnxRAGCLI
+2. **Extracting Actionable Insights from Complex SEC EDGAR Filings**:  
+   - The ASAP SEC-RAG-Navigator employs RAG techniques with Azure Cosmos NoSQL DiskANN technology to process financial data retrieved via SEC EDGAR APIs. It transforms intricate regulatory filings into concise, actionable insights while ensuring privacy and compliance, empowering professionals to make informed decisions effortlessly.
 
-GitHubActionTriggerOnnxRAGCLI is a command-line tool employing RAG techniques and ONNX models to answer questions based on domain-specific context. It includes an ONNX-based chat model (PHI-3) for generating responses, a small embedding model (BGE-MICRO-V2) for semantic search, and stores embeddings locally for quick retrieval. This configuration enables context-aware answers by retrieving relevant facts before generating responses.
+### How we built it  
+- **GitHubActionTriggerCLI**: Developed in C#, this tool integrates seamlessly with GitHub Actions for deployment within repositories. It uses OpenAI services for log analysis and leverages C# k8s libraries to securely interact with AKS clusters via GitHub Secrets.
 
-### SEC EDGAR Data Project
+- **ASAP SEC-RAG-Navigator**: Built on .NET frameworks alongside Azure services like Cosmos NoSQL DiskANN, this tool applies RAG techniques for large-scale financial data analysis while maintaining robust security measures.
+- Both tools incorporate ONNX Runtime models for optimized execution speed and utilize semantic search capabilities powered by DiskANN for precise information retrieval.
 
-The SEC EDGAR Data Project retrieves and processes financial data from the SEC EDGAR RESTful APIs. It includes functionality for:
-- Retrieving company CIKs by ticker.
-- Fetching filing histories.
-- Downloading specific filings.
+#### Technologies
 
-### ASAP SEC-RAG-Navigator
+##### .NET 9.0 SDK  
+The .NET 9.0 SDK provides the runtime, libraries, and tools for building applications on the .NET platform using languages like C#, F#, and Visual Basic.
 
-ASAP SEC-RAG-Navigator is a cutting-edge SaaS platform that leverages Retrieval-Augmented Generation (RAG) to revolutionize how professionals interact with SEC EDGAR filings. This tool combines AI to provide deep, actionable insights from complex financial data.
+##### Azure Kubernetes Service (AKS)  
+AKS simplifies Kubernetes cluster management, enabling developers to focus on scaling applications without infrastructure overhead.
 
-## How we built it
+##### Azure.AI.OpenAI  
+This service integrates OpenAI's language models into applications via Azure's secure infrastructure.
 
-### GitHubActionTriggerCLI
+##### KubernetesClient  
+A .NET library that programmatically manages Kubernetes resources like pods and deployments.
 
-GitHubActionTriggerCLI was developed using C# and integrates seamlessly with GitHub Actions for deployment within repositories. We utilized OpenAI's services to provide advanced log analysis capabilities. The application leverages C# k8s interface libraries to interact directly with AKS clusters, ensuring secure handling of sensitive information through GitHub Secrets.
+##### Microsoft.SemanticKernel  
+Provides APIs for semantic search and natural language processing using advanced AI models.
 
-### GitHubActionTriggerOnnxRAGCLI
+##### Microsoft.ML.OnnxRuntime & OnnxRuntimeGenAI  
+ONNX Runtime is a high-performance engine for running machine learning models across platforms. The GenAI extension optimizes generative AI tasks such as text or image creation.
 
-GitHubActionTriggerOnnxRAGCLI was built using .NET 9.0 SDK and ONNX Runtime for executing models. It integrates with GitHub Actions workflows and Azure Kubernetes Service (AKS) log analysis scenarios. The tool uses ONNX-based generative AI models and embedding models for chat completion and semantic search.
+##### Microsoft.SemanticKernel.Connectors.Onnx  
+Integrates ONNX models with Semantic Kernel to enhance semantic search and NLP capabilities.
 
-### SEC EDGAR Data Project
+##### Azure.AI.Inference  
+Enables scalable AI inference tasks on Azure using various frameworks and models.
 
-The SEC EDGAR Data Project was built using Python and leverages the SEC EDGAR RESTful APIs to retrieve and process financial data. It includes functionality for retrieving company CIKs by ticker, fetching filing histories, and downloading specific filings.
+##### Azure.Identity  
+Simplifies authentication for accessing Azure services through managed identities or client secrets.
 
-### ASAP SEC-RAG-Navigator
+##### Microsoft.Azure.Cosmos  
+A .NET SDK designed to interact with Cosmos DB—a globally distributed database supporting multiple data models including document-based structures ideal for RAG workflows.  
 
-ASAP SEC-RAG-Navigator was developed using a combination of .NET, Azure services, and AI models. It leverages Retrieval-Augmented Generation (RAG) techniques to provide deep, actionable insights from SEC EDGAR filings. The platform ensures data privacy and regulatory compliance while offering scalable architecture to handle growing data demands efficiently.
+These technologies power **RAG-GPT-Insight**, automating technical workflows (e.g., diagnosing Kubernetes pod failures) while simplifying regulatory data analysis from SEC filings through Retrieval-Augmented Generation techniques.
 
-## Challenges we ran into
+### Challenges we ran into  
+Developing RAG-GPT-Insight involved overcoming several obstacles:
+- **Integration Complexity**: Ensuring smooth communication between GitHub Actions workflows, Azure services, and our applications required careful orchestration.
+- **Security Concerns**: Protecting sensitive credentials during automated operations was paramount.
+- **AI Model Tuning**: Crafting prompts capable of accurately detecting patterns in both Kubernetes logs and complex financial filings demanded significant iteration.
 
-During development, several challenges arose:
+### Accomplishments that we're proud of  
+We successfully created tools that automate labor-intensive tasks such as diagnosing Kubernetes pod failures and deriving meaningful insights from regulatory documents. These innovations reduce manual effort while enhancing decision-making through AI-driven precision. By applying cutting-edge Retrieval-Augmented Generation across diverse scenarios, we’ve demonstrated its transformative potential in real-world applications.
 
-- **Integration Complexity**: Ensuring smooth communication between GitHub Actions, Azure services, and our applications required meticulous configuration.
-- **Security Concerns**: Safeguarding sensitive credentials while allowing access for automated processes was critical.
-- **AI Model Limitations**: Tuning the AI models with prompts for accurate detection of relevant patterns in logs and financial data took considerable effort.
+### What we learned  
+This project offered several valuable lessons:
+1. Cloud platforms like Azure provide essential scalability for handling vast datasets efficiently.
+2. Effective integration of collaborative tools like GitHub optimizes DevOps workflows significantly.
+3. Early feedback from users is crucial in refining features based on practical needs.
 
-## Accomplishments that we're proud of
+### What's next for RAG-GPT-Insight  
+Our roadmap includes:
+1. Expanding support beyond Azure by incorporating compatibility with other cloud providers such as AWS or GCP.
+2. Integrating advanced machine learning models to deliver deeper log analyses and richer insights from financial data.
+3. Building an intuitive dashboard interface to visualize trends across both Kubernetes logs and SEC filing analyses over time.
+4. Encouraging open-source contributions by fostering a community-driven approach to feature development.
 
-We are proud to have created tools that significantly reduce manual log analysis time and enhance financial data analysis. By automating these processes, teams can focus more on resolving issues and making informed decisions rather than identifying problems. Additionally, integrating AI-powered insights has enhanced our ability to preemptively address potential problems before they escalate.
+By focusing on these advancements, we aim to establish RAG-GPT-Insight as an indispensable solution for automating technical workflows while navigating complex regulatory landscapes effectively through the power of Retrieval-Augmented Generation!
 
-## What we learned
 
-Through this project, we gained valuable insights into:
-
-- **Collaboration Tools**: Effective use of collaborative platforms like GitHub can streamline workflows.
-- **Cloud Services Integration**: Navigating cloud service configurations enhances understanding of modern DevOps practices.
-- **User Feedback Importance**: Engaging early users helped refine features based on real-world needs.
-
-## What's next for RAG-GPT-Insight
-
-Looking ahead, we plan to enhance RAG-GPT-Insight by:
-
-1. Expanding support for additional cloud providers beyond Azure.
-2. Integrating more sophisticated machine learning models for deeper log and financial data insights.
-3. Developing a user-friendly dashboard interface for visualizing log and financial data trends over time.
-4. Encouraging community contributions to foster continuous improvement through feedback and feature requests.
-
-By pursuing these initiatives, we aim to make RAG-GPT-Insight an indispensable tool in the Kubernetes and financial data analysis ecosystems!
