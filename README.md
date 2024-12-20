@@ -202,3 +202,20 @@ To generate a Native-AOT application for `osx-arm64`, follow these steps:
    ```
 
 This will generate a self-contained, Native-AOT application for the `osx-arm64` runtime.
+
+## Technologies Used
+
+The project utilizes the following technologies:
+
+- .NET 9.0 SDK
+- OpenAI
+- Azure Kubernetes Service (AKS)
+- Azure.AI.OpenAI
+- KubernetesClient
+- Microsoft.SemanticKernel
+- Microsoft.ML.OnnxRuntime
+- Microsoft.ML.OnnxRuntimeGenAI
+- Microsoft.SemanticKernel.Connectors.Onnx
+- Azure.AI.Inference
+- Azure.Identity
+- Microsoft.Azure.Cosmos
