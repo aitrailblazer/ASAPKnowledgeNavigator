@@ -255,3 +255,7 @@ Azure.Identity is a library that provides authentication and authorization capab
 Microsoft.Azure.Cosmos is a .NET SDK for interacting with Azure Cosmos DB, a globally distributed, multi-model database service. The SDK provides APIs for managing and querying data in Cosmos DB, supporting various data models, including document, key-value, graph, and column-family.
 
 These technologies collectively enable the development of advanced AI-driven applications, leveraging the power of cloud services, machine learning models, and distributed computing.
+
+## Detailed Project Descriptions
+
+For detailed descriptions of each project, please refer to the [ProjectDetails.md](ProjectDetails.md) file.
