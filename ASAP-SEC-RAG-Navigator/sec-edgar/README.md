@@ -6,6 +6,27 @@ This project retrieves and processes financial data from the SEC EDGAR RESTful A
 - Fetching filing histories.
 - Downloading specific filings.
 
+# main.py Documentation
+
+## main()
+The main function that orchestrates the fetching and downloading of SEC filings for a given company ticker.
+
+## Variables
+- **dataset_path**: Path to the JSON file containing company tickers and exchange information.
+- **output_dir**: Directory where the downloaded files will be saved.
+- **email**: Email address used for SEC filings requests.
+- **company_info**: Instance of `CompanyInfo` initialized with the dataset path.
+- **sec_filings**: Instance of `SECFilings` initialized with the email address.
+- **ticker**: Example ticker symbol for which the filings will be fetched.
+- **cik**: Central Index Key (CIK) fetched using the ticker symbol.
+- **filings**: Filing history fetched using the CIK.
+- **filings_df**: DataFrame containing the filing history.
+- **latest_10k**: The latest 10-K filing from the filing history.
+- **accession_number**: Formatted accession number of the latest 10-K filing.
+- **file_name**: Name of the primary document in the latest 10-K filing.
+- **save_path**: Path where the latest 10-K filing will be saved.
+
+
 ## Setup
 1. Clone the repository:
    ```bash

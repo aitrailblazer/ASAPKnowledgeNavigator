@@ -30,9 +30,20 @@ using System.Text;
 using System.Threading.Tasks;
 class Program
 {
+
+    // The Azure Cosmos DB client instance
     private CosmosClient cosmosClient = null!;
+    // The Azure Cosmos DB database instance
     private Database database = null!;
+    // The Azure Cosmos DB container instance
     private Container container = null!;
+
+    // 
+    /// <summary>
+    /// The main entry point for the application.
+    /// </summary> 
+    /// <param name="args">The command-line arguments.</param>
+    /// <returns>A task that represents the asynchronous operation.</returns>
     static async Task Main(string[] args)
     {
         if (args.Length == 0)
@@ -47,6 +58,7 @@ class Program
         await navigatorService.ExecuteAsync(args);
     }
 
+
     static void PrintUsage()
     {
         Console.WriteLine("Usage:");
@@ -56,6 +68,7 @@ class Program
         Console.WriteLine("  SEC-RAG-Navigator knowledge-base-search \"<promptText>\"");
         Console.WriteLine("  SEC-RAG-Navigator phi-3.5-moe-instruct");
     }
+
 
     static IHostBuilder CreateHostBuilder(string[] args) =>
         Host.CreateDefaultBuilder(args)
@@ -127,6 +140,18 @@ class Program
                 // Register Semantic Kernel and related services
                 RegisterKernelServices(context, services);
             });
+
+    // 
+    /// <summary>
+    /// Registers the SemanticKernelService with the provided <see cref="IServiceCollection"/>.
+    /// </summary>
+    /// <param name="services">The <see cref="IServiceCollection"/> to add the service to.</param>
+    /// <remarks>
+    /// This method fetches the necessary environment variables for configuring the SemanticKernelService,
+    /// including the endpoint, API key, and deployment names for completion and embedding models.
+    /// If the deployment names are not provided, default values are used.
+    /// The service is registered with a scoped lifetime.
+    /// </remarks>
     static void RegisterSemanticKernelService(IServiceCollection services)
     {
         // Fetch environment variables for Semantic Kernel
@@ -151,6 +176,12 @@ class Program
             );
         });
     }
+
+    /// <summary>
+    /// Registers kernel services and configurations for the application.
+    /// </summary>
+    /// <param name="context">The host builder context.</param>
+    /// <param name="services">The service collection to which services are added.</param>
     static void RegisterKernelServices(HostBuilderContext context, IServiceCollection services)
     {
         string azureOpenAIChatDeploymentName = "gpt-4o";
@@ -199,9 +230,17 @@ class Program
         });
     }
 
+
+    /// <summary>
+    /// Registers services and configurations for the application.
+    /// </summary>
+    /// <typeparam name="TKey">The type of the key used in the text snippets.</typeparam>
+    /// <param name="services">The service collection to which services are added.</param>
+    /// <param name="kernelBuilder">The kernel builder used to configure the kernel.</param>
     static void RegisterServices<TKey>(IServiceCollection services, IKernelBuilder kernelBuilder)
         where TKey : notnull
     {
+        // Add vector store text search with custom mappers
         kernelBuilder.AddVectorStoreTextSearch<TextSnippet<TKey>>(
             new TextSearchStringMapper((result) =>
             {
@@ -224,11 +263,12 @@ class Program
                 throw new InvalidCastException("Result is not of type TextSnippet<TKey>.");
             }));
 
+        // Register the data loader as a singleton service
         services.AddSingleton<IDataLoader, DataLoader<TKey>>();
-        // Add the main service for this application.
+
+        // Register the RAG chat service as a scoped service
         services.AddScoped<RAGChatService<TKey>>();
     }
-
     static string GetEnvironmentVariable(string variableName)
     {
         return Environment.GetEnvironmentVariable(variableName)
@@ -242,6 +282,12 @@ public class SEC_RAG_NavigatorService
     private readonly ChatService _chatService;
     private readonly ILogger<SEC_RAG_NavigatorService> _logger;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="SEC_RAG_NavigatorService"/> class.
+    /// </summary>
+    /// <param name="cosmosDbServiceWorking">The Cosmos DB service instance.</param>
+    /// <param name="chatService">The chat service instance.</param>
+    /// <param name="logger">The logger instance.</param>
     public SEC_RAG_NavigatorService(
         CosmosDbServiceWorking cosmosDbServiceWorking,
         ChatService chatService,
@@ -252,6 +298,11 @@ public class SEC_RAG_NavigatorService
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
+    /// <summary>
+    /// Executes the specified command asynchronously based on the provided arguments.
+    /// </summary>
+    /// <param name="args">The command-line arguments.</param>
+    /// <returns>A Task representing the asynchronous operation.</returns>
     public async Task ExecuteAsync(string[] args)
     {
         string command = args[0].ToLower();
@@ -316,6 +367,9 @@ public class SEC_RAG_NavigatorService
         }
     }
 
+    /// <summary>
+    /// Prints the usage instructions for the SEC-RAG-Navigator application.
+    /// </summary>
     static void PrintUsage()
     {
         Console.WriteLine("Usage:");
@@ -335,7 +389,14 @@ public class CosmosDbServiceWorking
     private readonly RAGChatService<string> _ragChatService;
     private readonly ChatService _chatService;
 
-
+    /// <summary>
+    /// Initializes a new instance of the <see cref="CosmosDbServiceWorking"/> class.
+    /// </summary>
+    /// <param name="cosmosClient">The Cosmos DB client.</param>
+    /// <param name="databaseId">The ID of the database.</param>
+    /// <param name="logger">The logger instance.</param>
+    /// <param name="ragChatService">The RAG chat service instance.</param>
+    /// <param name="chatService">The chat service instance.</param>
     public CosmosDbServiceWorking(
         CosmosClient cosmosClient,
         string databaseId,
@@ -350,12 +411,25 @@ public class CosmosDbServiceWorking
         _chatService = chatService ?? throw new ArgumentNullException(nameof(chatService));
     }
 
+    /// <summary>
+    /// Creates a database in the Cosmos DB account if it does not already exist.
+    /// </summary>
+    /// <returns>A Task representing the asynchronous operation.</returns>
     public async Task CreateDatabaseAsync()
     {
         Database database = await _cosmosClient.CreateDatabaseIfNotExistsAsync(_databaseId);
         _logger.LogInformation($"Database created or exists: {database.Id}");
     }
 
+    /// <summary>
+    /// Creates a container in the Cosmos DB with specified properties.
+    /// </summary>
+    /// <param name="containerName">The name of the container to create.</param>
+    /// <param name="vectorPath">The path for the vector embedding.</param>
+    /// <param name="partitionKeyPaths">The list of partition key paths.</param>
+    /// <param name="includedPaths">The list of included paths for indexing.</param>
+    /// <param name="dimensions">The dimensions for the vector embedding.</param>
+    /// <returns>A Task representing the asynchronous operation.</returns>
     public async Task CreateContainerAsync(
         string containerName,
         string vectorPath,
@@ -409,6 +483,10 @@ public class CosmosDbServiceWorking
         _logger.LogInformation($"Container created or exists: {container.Id}");
     }
 
+    /// <summary>
+    /// Lists all databases and their containers in the Cosmos DB account.
+    /// </summary>
+    /// <returns>A Task representing the asynchronous operation.</returns>
     public async Task ListDatabasesAndContainersAsync()
     {
         _logger.LogInformation("Fetching databases and containers...");
@@ -440,6 +518,14 @@ public class CosmosDbServiceWorking
 
         _logger.LogInformation("Finished fetching database and container information.");
     }
+
+    /// <summary>
+    /// Handles the input file from a specified path.
+    /// This method processes a PDF file using the RAG chat service.
+    /// </summary>
+    /// <param name="tenantID">The tenant ID.</param>
+    /// <param name="userID">The user ID.</param>
+    /// <returns>A Task representing the asynchronous operation, with a string result indicating the success of the operation.</returns>
     public async Task<string> HandleInputFileFromPath(
             string tenantID,
             string userID)
@@ -479,6 +565,18 @@ public class CosmosDbServiceWorking
 
         return $"Successfully processed file: {fileName}";
     }
+
+    /// <summary>
+    /// Handles the Knowledge Base Completion Command asynchronously.
+    /// This method calls the GetKnowledgeBaseCompletionAsync method from the chat service
+    /// to retrieve a completion based on the provided parameters.
+    /// </summary>
+    /// <param name="tenantId">The tenant ID.</param>
+    /// <param name="userId">The user ID.</param>
+    /// <param name="categoryId">The category ID.</param>
+    /// <param name="promptText">The prompt text to generate the completion.</param>
+    /// <param name="similarityScore">The similarity score threshold for the completion.</param>
+    /// <returns>A Task representing the asynchronous operation.</returns>
     public async Task HandleKnowledgeBaseCompletionCommandAsync(
         string tenantId,
         string userId,
@@ -505,9 +603,15 @@ public class CosmosDbServiceWorking
             Console.WriteLine($"Error: {ex.Message}");
         }
     }
+
+
+    /// <summary>
+    /// Handles the Phi 3.5 MoE Instruct Command asynchronously using HTTP.
+    /// This method sets up a conversational assistant using Azure AI services via HTTP requests.
+    /// </summary>
+    /// <returns>A Task representing the asynchronous operation.</returns>
     public async Task HandlePhi35MoEInstructCommandAsync1()
     {
-
 
         var handler = new HttpClientHandler()
         {
@@ -587,7 +691,11 @@ public class CosmosDbServiceWorking
 
     }
 
-
+    /// <summary>
+    /// Handles the Phi 3.5 MoE Instruct Command asynchronously using HTTP.
+    /// This method sets up a conversational assistant using Azure AI services via HTTP requests.
+    /// </summary>
+    /// <returns>A Task representing the asynchronous operation.</returns>
     public async Task HandlePhi35MoEInstructCommandHttpAsync01()
     {
         // Configuration
@@ -639,6 +747,11 @@ public class CosmosDbServiceWorking
         }
     }
 
+    /// <summary>
+    /// Handles the Phi 3.5 MoE Instruct Command asynchronously.
+    /// This method sets up a conversational assistant using Azure AI services.
+    /// </summary>
+    /// <returns>A Task representing the asynchronous operation.</returns>
     public async Task HandlePhi35MoEInstructCommandAsync2()
     {
         string endpoint = GetEnvironmentVariable("PHI_ENDPOINT");
@@ -689,7 +802,12 @@ public class CosmosDbServiceWorking
     }
 
 
-
+    /// <summary>
+    /// Handles the Phi 3.5 MoE Instruct Command asynchronously.
+    /// This method sets up a conversational assistant using Azure AI services.
+    /// using semantic kernel
+    /// </summary>
+    /// <returns>A Task representing the asynchronous operation.</returns>
     public async Task HandlePhi35MoEInstructCommandAsyncs()
     {
         string endpoint = GetEnvironmentVariable("PHI_ENDPOINT");
@@ -766,7 +884,8 @@ You are a helpful, concise, and conversational assistant. Answer user questions 
 
         }
     }
-        static string GetEnvironmentVariable(string variableName)
+
+    static string GetEnvironmentVariable(string variableName)
     {
         return Environment.GetEnvironmentVariable(variableName)
             ?? throw new ArgumentNullException(variableName, $"{variableName} is not set in environment variables.");

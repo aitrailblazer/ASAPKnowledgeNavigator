@@ -14,14 +14,74 @@ RAG-GPT-Insight is an AI-driven solution designed to streamline log analysis for
 - [Contributing](#contributing)
 - [License](#license)
 
+Project Tree
+<!--
+This project directory structure represents a .NET application with various components organized into folders. 
+
+- `Models`: Contains the `Embedding.cs` file, which likely defines data models for embeddings.
+- `ModelsCopilotCosmosDB`: Contains `KnowledgeBaseItem.cs` and `UserParameters.cs`, which are models related to Cosmos DB.
+- `OptionsCosmosDB`: Contains configuration files for Cosmos DB, OpenAI, and Semantic Kernel.
+- `Program.cs`: The main entry point of the application.
+- `RAG`: Contains data loading services, options configurations, and other related services for the RAG (Retrieval-Augmented Generation) functionality.
+- `SEC-RAG-Navigator-db`: Contains the `RAGChatService.cs` file, which is likely a service for chat functionalities.
+- `SEC-RAG-Navigator-db.csproj`: The project file for the .NET application.
+- `ServicesCosmosDB`: Contains services for chat, Cosmos DB, and Semantic Kernel.
+- `bin` and `obj`: Directories for compiled binaries and object files.
+- `tsla-20231231.htm.html.pdf`: A PDF file, possibly containing documentation or reports.
+
+Each folder and file serves a specific purpose in the overall architecture of the application, contributing to its functionality and organization.
+-->
+
+```bash
+.
+├── Models
+│   └── Embedding.cs
+├── ModelsCopilotCosmosDB
+│   ├── KnowledgeBaseItem.cs
+│   └── UserParameters.cs
+├── OptionsCosmosDB
+│   ├── CosmosDb.cs
+│   ├── OpenAi.cs
+│   └── SemanticKernel.cs
+├── Program.cs
+├── RAG
+│   ├── DataLoader.cs
+│   ├── IDataLoader.cs
+│   ├── OptionsRAG
+│   │   ├── ApplicationConfig.cs
+│   │   ├── AzureCosmosDBConfig.cs
+│   │   ├── AzureOpenAIConfig.cs
+│   │   ├── AzureOpenAIEmbeddingsConfig.cs
+│   │   └── RagConfig.cs
+│   ├── RAGChatService-cs
+│   ├── TextSnippet.cs
+│   └── UniqueKeyGenerator.cs
+├── [README.md](http://_vscodecontentref_/1)
+├── SEC-RAG-Navigator-db
+│   └── RAG
+│       └── RAGChatService.cs
+├── SEC-RAG-Navigator-db.csproj
+├── ServicesCosmosDB
+│   ├── ChatService.cs
+│   ├── CosmosDbService.cs
+│   └── SemanticKernelService.cs
+├── bin
+│   └── Debug
+│       └── net9.0
+├── obj
+│   ├── Debug
+│   │   └── net9.0
+│   ├── SEC-RAG-Navigator-db.csproj.nuget.dgspec.json
+│   ├── SEC-RAG-Navigator-db.csproj.nuget.g.props
+│   ├── SEC-RAG-Navigator-db.csproj.nuget.g.targets
+│   ├── project.assets.json
+│   └── project.nuget.cache
+└── tsla-20231231.htm.html.pdf
+
+```
+
+
 ## Overview
-
-### K8sLogBotRAG
-
-K8sLogBotRAG automates Kubernetes log analysis within the GitHub ecosystem. It performs the following tasks:
-- **Fetches Logs**: Connects to your AKS cluster to retrieve pod logs.
-- **Analyzes Logs**: Uses AI to detect errors, warnings, or patterns indicative of issues.
-- **Reports Findings**: Posts analysis results as comments in GitHub Issues for collaborative review and action.
 
 ### GitHubActionTriggerCLI
 

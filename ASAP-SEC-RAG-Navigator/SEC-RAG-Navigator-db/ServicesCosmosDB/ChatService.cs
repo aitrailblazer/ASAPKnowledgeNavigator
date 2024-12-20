@@ -11,18 +11,23 @@ using Microsoft.Azure.Cosmos;
 using System.Diagnostics;
 using System.Text;
 
-
 public class ChatService
 {
     private readonly CosmosDbService _cosmosDbService;
     private readonly SemanticKernelService _semanticKernelService;
     private readonly int _maxConversationTokens;
     private readonly double _cacheSimilarityScore;
-
     private readonly int _knowledgeBaseMaxResults;
-
     private readonly ILogger<ChatService> _logger; // Logger instance
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ChatService"/> class.
+    /// </summary>
+    /// <param name="cosmosDbService">The Cosmos DB service instance.</param>
+    /// <param name="semanticKernelService">The semantic kernel service instance.</param>
+    /// <param name="maxConversationTokens">The maximum number of conversation tokens.</param>
+    /// <param name="cacheSimilarityScore">The cache similarity score threshold.</param>
+    /// <param name="logger">The logger instance.</param>
     public ChatService(
         CosmosDbService cosmosDbService,
         SemanticKernelService semanticKernelService,
@@ -32,33 +37,27 @@ public class ChatService
     {
         _cosmosDbService = cosmosDbService ?? throw new ArgumentNullException(nameof(cosmosDbService));
         _semanticKernelService = semanticKernelService ?? throw new ArgumentNullException(nameof(semanticKernelService));
-
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
-        //if (!Int32.TryParse(maxConversationTokens, out _maxConversationTokens))
-        //{
-        //    _logger.LogWarning("Invalid maxConversationTokens value '{Value}'. Defaulting to 100.", maxConversationTokens);
-        //    _maxConversationTokens = 100;
-        //}
+        // Initialize max conversation tokens
         _maxConversationTokens = 4096;
 
-        //if (!Double.TryParse(cacheSimilarityScore, out _cacheSimilarityScore))
-        //{
-        //    _logger.LogWarning("Invalid cacheSimilarityScore value '{Value}'. Defaulting to 0.99.", cacheSimilarityScore);
-        //    _cacheSimilarityScore = 0.90;
-        //}
+        // Initialize cache similarity score
         _cacheSimilarityScore = 0.90;
-        //if (!Int32.TryParse(productMaxResults, out _productMaxResults))
-        //{
-        //    _logger.LogWarning("Invalid productMaxResults value '{Value}'. Defaulting to 10.", productMaxResults);
-        //    _productMaxResults = 10;
-        //}
-        _knowledgeBaseMaxResults = 10;
 
-        //_logger.LogInformation("ChatService initialized with MaxConversationTokens={MaxConversationTokens}, CacheSimilarityScore={CacheSimilarityScore}, ProductMaxResults={ProductMaxResults}",
-        //_maxConversationTokens, _cacheSimilarityScore, _productMaxResults);
+        // Initialize knowledge base max results
+        _knowledgeBaseMaxResults = 10;
     }
 
+    /// <summary>
+    /// Retrieves a knowledge base completion based on the provided parameters.
+    /// </summary>
+    /// <param name="tenantId">The tenant ID.</param>
+    /// <param name="userId">The user ID.</param>
+    /// <param name="categoryId">The category ID.</param>
+    /// <param name="promptText">The prompt text to generate the completion.</param>
+    /// <param name="similarityScore">The similarity score threshold for the completion.</param>
+    /// <returns>A Task representing the asynchronous operation, with a tuple containing the completion and the title.</returns>
     public async Task<(string completion, string? title)> GetKnowledgeBaseCompletionAsync(
         string tenantId,
         string userId,
@@ -126,64 +125,12 @@ public class ChatService
             throw;
         }
     }
-    /*
-        public async Task<(string completion, string? title)> GetKnowledgeBaseCompletionAsync01(
-            string tenantId,
-            string userId,
-            string categoryId,
-            string promptText,
-            double similarityScore)
-        {
-            //_logger.LogInformation("Generating knowledge base completion for TenantId={TenantId}, UserId={UserId}, CategoryId={CategoryId}.", tenantId, userId, categoryId ?? "None");
 
-            try
-            {
-                // Validate inputs
-                ArgumentNullException.ThrowIfNull(tenantId, nameof(tenantId));
-                ArgumentNullException.ThrowIfNull(userId, nameof(userId));
-
-                // Generate embeddings for the prompt
-                float[] promptVectors = await _semanticKernelService.GetEmbeddingsAsync(promptText);
-                _logger.LogInformation("GetKnowledgeBaseCompletionAsync Embeddings generated for the prompt.");
-
-                // Generate keywords from promptText
-                string[] searchTerms = GenerateKeywords(promptText);
-
-                // Search for the closest knowledge base item
-                KnowledgeBaseItem? closestItem = await _cosmosDbService.SearchKnowledgeBaseAsync(
-                    vectors: promptVectors,
-                    tenantId: tenantId,
-                    userId: userId,
-                    categoryId: categoryId,
-                    similarityScore: similarityScore,
-                    searchTerms: searchTerms);
-
-                if (closestItem == null)
-                {
-                    _logger.LogInformation("GetKnowledgeBaseCompletionAsync No similar knowledge base items found.");
-                    return (string.Empty, null);
-                }
-
-                _logger.LogDebug("GetKnowledgeBaseCompletionAsync Found closest item: {Title}.", closestItem.Title);
-
-                // Generate completion using the found item
-                var contextWindow = new List<KnowledgeBaseItem> { closestItem }; // Create context window with the closest item
-                (string generatedCompletion, int tokens) = await _semanticKernelService.GetASAPQuick<KnowledgeBaseItem>(
-                    input: promptText,
-                    contextData: closestItem
-                    );
-
-                _logger.LogInformation("GetKnowledgeBaseCompletionAsync Completion generated for knowledge base.");
-
-                return (generatedCompletion, closestItem.Title);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "GetKnowledgeBaseCompletionAsync Error generating knowledge base completion for TenantId={TenantId}, UserId={UserId}, CategoryId={CategoryId}.", tenantId, userId, categoryId ?? "None");
-                throw;
-            }
-        }
-        */
+    /// <summary>
+    /// Generates keywords from the provided prompt text.
+    /// </summary>
+    /// <param name="promptText">The prompt text to generate keywords from.</param>
+    /// <returns>An array of keywords.</returns>
     private string[] GenerateKeywords(string promptText)
     {
         if (string.IsNullOrWhiteSpace(promptText))
@@ -199,7 +146,4 @@ public class ChatService
 
         return keywords;
     }
-
-
 }
-

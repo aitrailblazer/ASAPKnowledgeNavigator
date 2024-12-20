@@ -3,6 +3,9 @@ from sec_data.company_info import CompanyInfo
 from sec_data.filings import SECFilings
 
 def main():
+    """
+    Main function to fetch and download SEC filings for a given company ticker.
+    """
     # Paths and setup
     dataset_path = "data/company_tickers_exchange.json"
     output_dir = "data"

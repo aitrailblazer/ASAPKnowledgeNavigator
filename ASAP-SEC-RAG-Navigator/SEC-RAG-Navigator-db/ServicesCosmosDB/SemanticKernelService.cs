@@ -62,10 +62,11 @@ Knowledge base context is provided below:
     /// <param name="endpoint">Endpoint URI.</param>
     /// <param name="completionDeploymentName">Name of the deployed Azure OpenAI completion model.</param>
     /// <param name="embeddingDeploymentName">Name of the deployed Azure OpenAI embedding model.</param>
+    /// <param name="apiKey">API key for authentication.</param>
+    /// <param name="dimensions">Dimensions for the embedding model.</param>
+    /// <param name="logger">Logger instance for logging.</param>
     /// <exception cref="ArgumentNullException">Thrown when endpoint, key, or modelName is either null or empty.</exception>
-    /// <remarks>
-    /// This constructor will validate credentials and create a Semantic Kernel instance.
-    /// </remarks>
+
     private readonly ILogger<SemanticKernelService> _logger;
 
     public SemanticKernelService(
@@ -87,7 +88,10 @@ Knowledge base context is provided below:
                 dimensions: dimensions)
             .Build();
     }
-
+    /// <summary>
+    /// Creates a kernel builder with the necessary configurations.
+    /// </summary>
+    /// <returns>An instance of IKernelBuilder.</returns>
     public IKernelBuilder CreateKernelBuilder()
     {
         IKernelBuilder kernelBuilder = Kernel.CreateBuilder();
@@ -132,6 +136,14 @@ Knowledge base context is provided below:
         return Environment.GetEnvironmentVariable(variableName)
             ?? throw new ArgumentNullException(variableName, $"{variableName} is not set in environment variables.");
     }
+
+    /// <summary>
+    /// Generates a knowledge base completion using the provided context data.
+    /// </summary>
+    /// <param name="input">User input.</param>
+    /// <param name="contextData">Knowledge base context data.</param>
+    /// <returns>A Task representing the asynchronous operation, with a tuple containing the generated completion and the number of tokens used.</returns>
+
     public async Task<(string generatedCompletion, int tokens)> GetASAPQuick01<T>(
        string input,
        KnowledgeBaseItem contextData)
@@ -319,18 +331,18 @@ assistant:
             {
                 return ("Invalid input.", 0);
             }
-        string endpoint = GetEnvironmentVariable("PHI_ENDPOINT");
-        string apiKey = GetEnvironmentVariable("PHI_KEY");
+            string endpoint = GetEnvironmentVariable("PHI_ENDPOINT");
+            string apiKey = GetEnvironmentVariable("PHI_KEY");
 
-        string modelId = "phi-3-5-moe-instruct";
+            string modelId = "phi-3-5-moe-instruct";
 
-        // Kernel builder setup
-        var kernelBuilder = Kernel.CreateBuilder();
-        kernelBuilder.AddAzureAIInferenceChatCompletion(
-            endpoint: new Uri(endpoint),
-            apiKey: apiKey,
-            modelId: modelId
-        );
+            // Kernel builder setup
+            var kernelBuilder = Kernel.CreateBuilder();
+            kernelBuilder.AddAzureAIInferenceChatCompletion(
+                endpoint: new Uri(endpoint),
+                apiKey: apiKey,
+                modelId: modelId
+            );
 
             Kernel kernel = kernelBuilder.Build();
 
@@ -429,6 +441,15 @@ Knowledge base context is provided below:
         }
     }
 
+    /// <summary>
+    /// Updates the prompty template with the provided input, title, and context.
+    /// </summary>
+    /// <param name="input">User input.</param>
+    /// <param name="title">Knowledge base title.</param>
+    /// <param name="context">Knowledge base context.</param>
+    /// <param name="promptyTemplate">Prompty template to update.</param>
+    /// <returns>Updated prompty template.</returns>
+
     public string UpdatepromptyTemplate(
     string input,
     string title,
@@ -453,6 +474,15 @@ Knowledge base context is provided below:
     }
 
 
+    /// <summary>
+    /// Generates a knowledge base completion using the provided context data.
+    /// </summary>
+    /// <param name="categoryId">Category ID.</param>
+    /// <param name="contextWindow">Context window containing knowledge base items.</param>
+    /// <param name="contextData">Knowledge base context data.</param>
+    /// <param name="promptText">Prompt text.</param>
+    /// <param name="useChatHistory">Flag indicating whether to use chat history.</param>
+    /// <returns>A Task representing the asynchronous operation, with a tuple containing the generated completion and the number of tokens used.</returns>
 
     public async Task<(string generatedCompletion, int tokens)> GetRagKnowledgeBaseCompletionAsync<T>(
         string categoryId,

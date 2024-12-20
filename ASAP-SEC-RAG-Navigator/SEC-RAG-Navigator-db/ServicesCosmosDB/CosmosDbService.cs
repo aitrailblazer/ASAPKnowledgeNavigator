@@ -1,5 +1,4 @@
-﻿
-using Cosmos.Copilot.Models;
+﻿using Cosmos.Copilot.Models;
 using Microsoft.Azure.Cosmos;
 using Microsoft.Azure.Cosmos.Fluent;
 using Microsoft.Azure.Cosmos.Serialization.HybridRow.Schemas;
@@ -11,7 +10,6 @@ using System.Text.Json;
 using Container = Microsoft.Azure.Cosmos.Container;
 using PartitionKey = Microsoft.Azure.Cosmos.PartitionKey;
 using Microsoft.Azure.Cosmos.Linq;
-
 
 /// <summary>
 /// Service to access Azure Cosmos DB for NoSQL.
@@ -26,10 +24,7 @@ public class CosmosDbService
     /// </summary>
     /// <param name="endpoint">Endpoint URI.</param>
     /// <param name="databaseName">Name of the database to access.</param>
-    /// <param name="chatContainerName">Name of the chat container to access.</param>
-    /// <param name="cacheContainerName">Name of the cache container to access.</param>
-    /// <param name="productContainerName">Name of the product container to access.</param>
-    /// <param name="productDataSourceURI">URI to the product data source.</param>
+    /// <param name="knowledgeBaseContainerName">Name of the knowledge base container to access.</param>
     /// <param name="logger">Logger instance for logging.</param>
     /// <exception cref="ArgumentNullException">Thrown when any required parameter is null or empty.</exception>
     /// <remarks>
@@ -43,7 +38,6 @@ public class CosmosDbService
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _logger.LogInformation("Initializing CosmosDbService.");
-
 
         CosmosSerializationOptions options = new()
         {
@@ -71,6 +65,7 @@ public class CosmosDbService
             throw;
         }
     }
+
     /// <summary>
     /// Helper function to generate a hierarchical partition key based on tenantId, userId, and categoryId.
     /// All parameters are required and will be included in the partition key, even if they are empty strings.
@@ -96,6 +91,15 @@ public class CosmosDbService
 
         return partitionKeyBuilder.Build();
     }
+
+    /// <summary>
+    /// Upserts a knowledge base item into the Cosmos DB.
+    /// </summary>
+    /// <param name="tenantId">The tenant ID.</param>
+    /// <param name="userId">The user ID.</param>
+    /// <param name="categoryId">The category ID.</param>
+    /// <param name="knowledgeBaseItem">The knowledge base item to upsert.</param>
+    /// <returns>A Task representing the asynchronous operation.</returns>
     public async Task UpsertKnowledgeBaseItemAsync(
         string tenantId,
         string userId,
@@ -105,12 +109,12 @@ public class CosmosDbService
         _logger.LogInformation("Upserting knowledge base item with ID: {KnowledgeBaseItemId} in category: {Category}", knowledgeBaseItem.Id, categoryId);
 
         // Generate a partition key using the category as the primary identifier
-        //PartitionKey partitionKey = GetPK(tenantId, userId, categoryId);
         PartitionKey partitionKey = new PartitionKeyBuilder()
-                        .Add(tenantId)
-                        .Add(userId)
-                        .Add(categoryId)
-                        .Build();
+            .Add(tenantId)
+            .Add(userId)
+            .Add(categoryId)
+            .Build();
+
         try
         {
             // Upsert the knowledge base item into the specified container
@@ -132,6 +136,17 @@ public class CosmosDbService
             throw;
         }
     }
+
+    /// <summary>
+    /// Searches the knowledge base for items matching the provided criteria.
+    /// </summary>
+    /// <param name="vectors">The vector embeddings for the search.</param>
+    /// <param name="tenantId">The tenant ID.</param>
+    /// <param name="userId">The user ID.</param>
+    /// <param name="categoryId">The category ID.</param>
+    /// <param name="similarityScore">The similarity score threshold for the search.</param>
+    /// <param name="searchTerms">The search terms to use in the query.</param>
+    /// <returns>A Task representing the asynchronous operation, with a list of matching knowledge base items.</returns>
     public async Task<List<KnowledgeBaseItem>> SearchKnowledgeBaseAsync(
         float[] vectors,
         string tenantId,
@@ -206,6 +221,16 @@ public class CosmosDbService
         return results;
     }
 
+    /// <summary>
+    /// Searches the knowledge base for the closest item matching the provided criteria.
+    /// </summary>
+    /// <param name="vectors">The vector embeddings for the search.</param>
+    /// <param name="tenantId">The tenant ID.</param>
+    /// <param name="userId">The user ID.</param>
+    /// <param name="categoryId">The category ID.</param>
+    /// <param name="similarityScore">The similarity score threshold for the search.</param>
+    /// <param name="searchTerms">The search terms to use in the query.</param>
+    /// <returns>A Task representing the asynchronous operation, with the closest matching knowledge base item.</returns>
     public async Task<KnowledgeBaseItem?> SearchKnowledgeBaseAsync01(
         float[] vectors,
         string tenantId,
@@ -340,5 +365,4 @@ public class CosmosDbService
             throw;
         }
     }
-
 }
