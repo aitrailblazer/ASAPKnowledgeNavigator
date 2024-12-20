@@ -14,8 +14,8 @@ RAG-GPT-Insight is an AI-driven solution designed to streamline log analysis for
 - [Contributing](#contributing)
 - [License](#license)
 
-Project Tree
-<!--
+## Project Tree
+
 This project directory structure represents a .NET application with various components organized into folders. 
 
 - `Models`: Contains the `Embedding.cs` file, which likely defines data models for embeddings.
@@ -30,7 +30,6 @@ This project directory structure represents a .NET application with various comp
 - `tsla-20231231.htm.html.pdf`: A PDF file, possibly containing documentation or reports.
 
 Each folder and file serves a specific purpose in the overall architecture of the application, contributing to its functionality and organization.
--->
 
 ```bash
 .
@@ -56,7 +55,7 @@ Each folder and file serves a specific purpose in the overall architecture of th
 │   ├── RAGChatService-cs
 │   ├── TextSnippet.cs
 │   └── UniqueKeyGenerator.cs
-├── [README.md](http://_vscodecontentref_/1)
+├── README.md
 ├── SEC-RAG-Navigator-db
 │   └── RAG
 │       └── RAGChatService.cs
@@ -80,7 +79,6 @@ Each folder and file serves a specific purpose in the overall architecture of th
 
 ```
 
-
 ## Overview
 
 ### GitHubActionTriggerCLI
@@ -98,6 +96,22 @@ GitHubActionTriggerOnnxRAGCLI is a command-line tool that utilizes Retrieval-Aug
 - Uses ONNX-based generative AI models and embedding models for chat completion and semantic search.
 - Retrieves context from a local vector store of facts before generating answers.
 - Stores embeddings of factual documents locally for quick lookups.
+
+### SEC EDGAR Data Project
+
+The SEC EDGAR Data Project retrieves and processes financial data from the SEC EDGAR RESTful APIs. It includes functionality for:
+- Retrieving company CIKs by ticker.
+- Fetching filing histories.
+- Downloading specific filings.
+
+### ASAP SEC-RAG-Navigator
+
+ASAP SEC-RAG-Navigator is a cutting-edge SaaS platform that leverages Retrieval-Augmented Generation (RAG) to revolutionize how professionals interact with SEC EDGAR filings. This tool combines AI to provide deep, actionable insights from complex financial data. It offers:
+- Instant SEC Data Access
+- RAG-Powered Insights
+- Natural Language Processing
+- Secure and Compliant
+- Scalable Architecture
 
 ## Prerequisites
 
@@ -177,7 +191,6 @@ Once the analysis is complete, review the results posted as comments in the rele
 ## Workflow Configuration
 
 Configure the workflow to suit your needs by modifying the GitHub Actions YAML files in the .github/workflows directory.
-
 
 ## Generating a Native-AOT Application for `osx-arm64`
 
