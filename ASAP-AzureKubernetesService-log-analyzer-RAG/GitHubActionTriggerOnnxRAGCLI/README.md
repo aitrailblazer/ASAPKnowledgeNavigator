@@ -4,11 +4,11 @@
 
 ## Features
 
-- **ONNX-based Chat Model (PHI-3)**: Uses an ONNX-based generative AI model (`PHI-3`) for chat completion.
+- **ONNX-based Chat Model (Phi-3)**: Uses an ONNX-based generative AI model (`PHI-3`) for chat completion.
 - **Embedding Model (BGE-MICRO-V2)**: Leverages a small embedding model (`BGE-MICRO-V2`) for semantic search.
 - **Retrieval-Augmented Generation (RAG)**: Retrieves context from a local vector store of facts before generating answers.
 - **In-Memory Vector Store**: Stores embeddings of factual documents (`.txt` files) locally for quick lookups.
-- **Context-Aware Answers**: The assistant can produce more accurate and context-rich responses based on the provided facts.
+- **Context-Aware Answers**: The assistant can produce more accurate and context-rich responses based on the provided facts.Generates a Microsoft Phi-3 local model-based analysis
 
 ## Prerequisites
 
@@ -23,9 +23,11 @@
 3. **Models & Vocab Files**:  
 Models and Vocabulary Files:
 Obtain the following:
-PHI-3 Model (ONNX): A lightweight, state-of-the-art open language model developed by Microsoft, trained on high-quality, reasoning-dense data, suitable for tasks such as text generation and conversational AI. The model is available in different configurations, including a "mini" version with 3.8 billion parameters and context lengths of 4K and 128K tokens. 
 
-[PHI-3](https://huggingface.co/microsoft/Phi-3-mini-4k-instruct?utm_source=chatgpt.com)
+
+Phi-3.5 Mini Model (ONNX): A lightweight, state-of-the-art open language model developed by Microsoft, trained on high-quality, reasoning-dense data, suitable for tasks such as text generation and conversational AI. The model is available in different configurations, including a "mini" version with 3.8 billion parameters and context lengths of 4K and 128K tokens. 
+
+[Phi-3.5 Mini](https://huggingface.co/microsoft/Phi-3.5-mini-instruct-onnx)
 
 BGE-MICRO-V2 Model (ONNX): A compact embedding model designed for generating dense vector representations of text, useful for tasks like clustering and semantic search. Due to its small size, BGE-MICRO-V2 is well-suited for deployment on devices with limited resources, offering fast inference times with a slight trade-off in accuracy compared to larger models. 
 

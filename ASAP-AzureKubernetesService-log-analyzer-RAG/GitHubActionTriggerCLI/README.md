@@ -21,7 +21,7 @@ GitHubActionTriggerCLI performs the following tasks:
 1. Validates an access code.
 2. Lists Kubernetes pods and filters out failing ones.
 3. Describes the failing pods.
-4. Generates a GPT-based analysis for each failing pod.
+4. Generates a Azure OpenAI GPT-4o based analysis for each failing pod.
 5. Creates GitHub issues for each failing pod with the analysis results.
 
 ## Prerequisites
