@@ -348,3 +348,6 @@ This will generate a self-contained, Native-AOT application for the `osx-arm64` 
 ## Detailed Project Descriptions
 
 For detailed descriptions of each project, please refer to the [ProjectDetails.md](ProjectDetails.md) file.
+
+
+dotnet new fluentaspire-starter --name  ASAP-SEC-RAG-Navigator-Aspire

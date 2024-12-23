@@ -1,6 +1,10 @@
 # GitHubActionTriggerCLI
 
-GitHubActionTriggerCLI is a C# application designed to analyze Kubernetes pods and create GitHub issues for failing pods. This tool integrates with GitHub Actions to automate the process of identifying and reporting issues in your Kubernetes cluster.
+GitHubActionTriggerCLI is a powerful C# application that streamlines Kubernetes pod failure detection and reporting. Designed to enhance operational efficiency, this tool integrates seamlessly with GitHub Actions to automate the analysis of Kubernetes clusters and the creation of GitHub issues for failing pods.
+
+The application leverages Azure OpenAI's GPT models for advanced semantic log analysis, enabling it to pinpoint the root causes of Kubernetes pod failures with precision. It also incorporates Azure Cosmos DB NoSQL with DiskANN for efficient vector-based indexing and retrieval of log data, ensuring rapid and reliable insights into complex system issues.
+
+By automating the identification of failures and generating actionable GitHub issues, GitHubActionTriggerCLI empowers DevOps teams to proactively address problems, minimize downtime, and maintain system reliability.
 
 ## Table of Contents
 
@@ -110,3 +114,4 @@ To run the application manually, you can use the following command:
 ```sh
 dotnet run --project ./path/to/your/Project.csproj -- <accessCode>
 ```
+dotnet run Secret123

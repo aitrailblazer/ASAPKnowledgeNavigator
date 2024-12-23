@@ -1,9 +1,9 @@
-# ASAP SEC-RAG-Navigator
+# SEC-RAG-Navigator-db
 
 **Product Name:** **ASAP SEC-RAG-Navigator**
 
 **Overview:**  
-ASAP SEC-RAG-Navigator is a cutting-edge SaaS platform that leverages Retrieval-Augmented Generation (RAG) to revolutionize how professionals interact with SEC EDGAR filings. This tool combines AI to provide deep, actionable insights from complex financial data.
+ASAP SEC-RAG-Navigator is a cutting-edge tool that leverages Retrieval-Augmented Generation (RAG) to revolutionize how professionals interact with SEC EDGAR filings. This tool combines AI to provide deep, actionable insights from complex financial data.
 
 **Key Features:**
 - **Instant SEC Data Access:** Real-time updates on SEC filings.

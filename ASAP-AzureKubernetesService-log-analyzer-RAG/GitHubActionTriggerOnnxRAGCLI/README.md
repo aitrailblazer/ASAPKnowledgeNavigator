@@ -1,6 +1,10 @@
 # GitHubActionTriggerOnnxRAGCLI
 
-**GitHubActionTriggerOnnxRAGCLI** is a command-line tool that utilizes Retrieval-Augmented Generation (RAG) techniques and ONNX models to answer questions using domain-specific context. It is designed to integrate with GitHub Actions workflows and Azure Kubernetes Service (AKS) log analysis scenarios.
+GitHubActionTriggerOnnxRAGCLI is a local-first command-line tool that leverages Retrieval-Augmented Generation (RAG) techniques and ONNX models to deliver accurate, context-aware answers to domain-specific questions. Designed to run efficiently on local infrastructure, it ensures secure and fast processing of data without relying on external services.
+
+This tool integrates seamlessly with GitHub Actions workflows and supports Azure Kubernetes Service (AKS) log analysis scenarios, enabling teams to troubleshoot and resolve issues with minimal latency. By keeping computations local, GitHubActionTriggerOnnxRAGCLI enhances data privacy and control while maintaining the flexibility and power of advanced AI techniques.
+
+Whether you're analyzing logs, answering complex questions, or automating workflows, GitHubActionTriggerOnnxRAGCLI provides a robust, privacy-focused solution for modern DevOps and IT operations.
 
 ## Features
 

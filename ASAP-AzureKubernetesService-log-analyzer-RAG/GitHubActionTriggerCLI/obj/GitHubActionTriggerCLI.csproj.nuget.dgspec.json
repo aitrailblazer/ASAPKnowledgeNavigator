@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "/Users/constantinevassilev02/MyLocalDocuments/go-projects/RAG-GPT-Insight/GitHubActionTriggerCLI/GitHubActionTriggerCLI.csproj": {}
+    "/Users/constantinevassilev02/MyLocalDocuments/go-projects/RAG-GPT-Insight/ASAP-AzureKubernetesService-log-analyzer-RAG/GitHubActionTriggerCLI/GitHubActionTriggerCLI.csproj": {}
   },
   "projects": {
-    "/Users/constantinevassilev02/MyLocalDocuments/go-projects/RAG-GPT-Insight/GitHubActionTriggerCLI/GitHubActionTriggerCLI.csproj": {
+    "/Users/constantinevassilev02/MyLocalDocuments/go-projects/RAG-GPT-Insight/ASAP-AzureKubernetesService-log-analyzer-RAG/GitHubActionTriggerCLI/GitHubActionTriggerCLI.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "/Users/constantinevassilev02/MyLocalDocuments/go-projects/RAG-GPT-Insight/GitHubActionTriggerCLI/GitHubActionTriggerCLI.csproj",
+        "projectUniqueName": "/Users/constantinevassilev02/MyLocalDocuments/go-projects/RAG-GPT-Insight/ASAP-AzureKubernetesService-log-analyzer-RAG/GitHubActionTriggerCLI/GitHubActionTriggerCLI.csproj",
         "projectName": "GitHubActionTriggerCLI",
-        "projectPath": "/Users/constantinevassilev02/MyLocalDocuments/go-projects/RAG-GPT-Insight/GitHubActionTriggerCLI/GitHubActionTriggerCLI.csproj",
+        "projectPath": "/Users/constantinevassilev02/MyLocalDocuments/go-projects/RAG-GPT-Insight/ASAP-AzureKubernetesService-log-analyzer-RAG/GitHubActionTriggerCLI/GitHubActionTriggerCLI.csproj",
         "packagesPath": "/Users/constantinevassilev02/.nuget/packages/",
-        "outputPath": "/Users/constantinevassilev02/MyLocalDocuments/go-projects/RAG-GPT-Insight/GitHubActionTriggerCLI/obj/",
+        "outputPath": "/Users/constantinevassilev02/MyLocalDocuments/go-projects/RAG-GPT-Insight/ASAP-AzureKubernetesService-log-analyzer-RAG/GitHubActionTriggerCLI/obj/",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "/Users/constantinevassilev02/.nuget/NuGet/NuGet.Config"

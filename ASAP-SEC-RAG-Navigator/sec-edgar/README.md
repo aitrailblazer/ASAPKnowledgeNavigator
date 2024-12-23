@@ -1,4 +1,6 @@
-# SEC EDGAR Data Project
+# sec-edgar
+
+SEC EDGAR Data Project
 
 ## Overview
 This project retrieves and processes financial data from the SEC EDGAR RESTful APIs. It includes functionality for:
