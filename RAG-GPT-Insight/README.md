@@ -350,4 +350,30 @@ This will generate a self-contained, Native-AOT application for the `osx-arm64` 
 For detailed descriptions of each project, please refer to the [ProjectDetails.md](ProjectDetails.md) file.
 
 
-dotnet new fluentaspire-starter --name  ASAP-SEC-RAG-Navigator-Aspire
+## Required Environment Variables
+
+### GitHubActionTriggerCLI
+
+- `ACCESS_CODE_HASH`
+- `ENDPOINT`
+- `API_KEY`
+- `MODEL`
+
+### GitHubActionTriggerOnnxRAGCLI
+
+- `PHI3_MODEL_PATH`
+- `BGE_MICRO_V2_MODEL_PATH`
+- `BGE_MICRO_V2_VOCAB_PATH`
+
+### ASAP SEC-RAG-Navigator
+
+- `COSMOS_DB_ENDPOINT`
+- `COSMOS_DB_PRIMARY_KEY`
+- `AZURE_OPENAI_ENDPOINT`
+- `AZURE_OPENAI_KEY`
+- `AZURE_OPENAI_COMPLETION_DEPLOYMENT_NAME`
+- `AZURE_OPENAI_EMBEDDING_DEPLOYMENT_NAME`
+- `COSMOS_DB_CONNECTION_STRING`
+- `COSMOS_DB_DATABASE_ID`
+- `PHI_ENDPOINT`
+- `PHI_KEY`

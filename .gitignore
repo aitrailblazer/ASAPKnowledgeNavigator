@@ -26,3 +26,11 @@ go.work.sum
 bld1.bash
 
 ASAP-SEC-RAG-Navigator-Aspire
+
+.DS_Store
+env.txt
+
+# Exclude directories
+infra/
+obj/
+bin/

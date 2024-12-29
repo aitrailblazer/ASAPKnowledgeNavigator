@@ -1,0 +1,33 @@
+﻿@page "/counter"
+@rendermode InteractiveServer
+
+<PageTitle>Counter</PageTitle>
+
+<h1>Counter</h1>
+
+<div role="status" style="padding-bottom: 1em;">
+    Current count: <FluentBadge Appearance="Appearance.Neutral">@currentCount</FluentBadge>
+</div>
+
+<FluentButton Appearance="Appearance.Accent" @onclick="IncrementCount">Click me</FluentButton>
+
+@code {
+    private int currentCount = 0;
+
+    private void IncrementCount()
+    {
+        currentCount++;
+        LogCountChange();
+    }
+
+    private void LogCountChange()
+    {
+        Console.WriteLine($"Counter updated: {currentCount}");
+    }
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        Console.WriteLine("Counter component initialized.");
+    }
+}

@@ -1,0 +1,45 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <base href="/" />
+    <link rel="stylesheet" href="@Assets["app.css"]" />
+    <link rel="stylesheet" href="@Assets["ASAPKnowledgeNavigator.Web.styles.css"]" />
+    <ImportMap />
+    <link rel="icon" type="image/x-icon" href="favicon.ico" />
+    <HeadOutlet />
+</head>
+
+<body>
+    <Routes />
+    <script src="_framework/blazor.web.js"></script>
+    <script>
+        function scrollToBottom(containerId) {
+            const container = document.getElementById(containerId);
+            if (container) {
+                container.scrollTop = container.scrollHeight;
+            }
+        }
+    </script>
+    <script>
+        function adjustTextAreaHeight(textAreaId) {
+            console.log("Function called for:", textAreaId);
+            var textArea = document.getElementById(textAreaId);
+            if (textArea) {
+                console.log("Textarea found:", textArea);
+                textArea.style.height = 'auto';
+                textArea.style.height = (textArea.scrollHeight + 2) + 'px';
+                console.log("New height set:", textArea.style.height);
+            } else {
+                console.log("Textarea not found");
+            }
+        }
+
+    </script>
+
+
+</body>
+
+</html>

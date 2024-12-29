@@ -96,15 +96,14 @@ Knowledge base context is provided below:
     {
         IKernelBuilder kernelBuilder = Kernel.CreateBuilder();
 
-        string deploymentName = "gpt-4o";
+        string deploymentName = "gpt-4o-mini";
         string endpoint = GetEnvironmentVariable("AZURE_OPENAI_ENDPOINT");
         string apiKey = GetEnvironmentVariable("AZURE_OPENAI_KEY");
 
-        //apiKey = "4Uc3tCWfTHpNcJWgikWObqF5cH061e1t"; // 
 
         int embeddingsdDimensions = 3072;
 
-        string modelId = "gpt-4o";
+        string modelId = "gpt-4o-mini";
 
         // Create HttpClient with custom headers and timeout
         var httpClient = new HttpClient();
