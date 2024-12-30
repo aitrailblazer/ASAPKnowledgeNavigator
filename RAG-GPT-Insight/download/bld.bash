@@ -2,7 +2,7 @@
 
 # Set variables
 CIK="1045810"  # NVIDIA's CIK
-USER_AGENT="Constantine (constantine@aitrailblazer.com)"
+USER_AGENT="Constantine (constantine@example.com)"
 RAW_RESPONSE_FILE="submissions.json"
 OUTPUT_10K_FILE="latest_10k.html"
 
