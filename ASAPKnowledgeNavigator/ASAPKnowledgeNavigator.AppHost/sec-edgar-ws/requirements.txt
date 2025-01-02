@@ -1,0 +1,39 @@
+# Web framework
+starlette==0.27.0          # Lightweight ASGI framework for building modern web APIs and apps
+
+# Async HTTP client for Python
+httpx==0.27.0              # Full-featured HTTP client with async support
+
+# Data manipulation and numerical computations
+pandas>=1.5.3,<2.0.0       # Robust data manipulation library
+numpy>=1.24.3,<2.0.0       # Fundamental package for numerical computations (compatible with Pandas <2.0.0)
+
+# HTML to PDF conversion
+weasyprint>=57.2,<63       # HTML to PDF converter; works with CSS
+
+# ASGI server for production
+uvicorn==0.22.0            # Fast ASGI server for running Starlette or FastAPI apps
+
+# Retry logic for HTTP requests
+tenacity==8.2.2            # Add retry policies for handling transient failures
+
+# Environment variables management
+python-dotenv==1.0.0       # Simplifies environment variable management in development
+
+# High-performance JSON parser/serializer
+orjson==3.9.5              # Fast JSON parsing and serialization
+
+# Enhanced logging and debugging
+loguru==0.7.0              # Modern logging library for advanced logging needs
+
+# Traditional HTTP requests (optional, fallback for synchronous workflows)
+requests==2.31.0           # Blocking HTTP requests with a simpler API
+
+# Data visualization
+plotly>=5.15.0,<6.0        # Interactive plotting library for creating visualizations (compatible with Pandas)
+
+# Additional optional dependencies for Plotly (if needed)
+kaleido>=0.2,<1.0          # For exporting Plotly figures as static images (optional)
+
+# Optional: For handling XML in XBRL processing (if extended functionality is added)
+lxml>=4.9,<5.0             # High-performance XML and HTML parsing library
