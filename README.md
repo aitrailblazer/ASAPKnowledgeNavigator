@@ -1,6 +1,23 @@
-# ASAP Knowledge Navigator: Harnessing RAG for Enhanced Knowledge Retrieval and Insight Generation
+# ASAP Knowledge Navigator: Revolutionizing Knowledge Retrieval and Insight Generation with RAG
 
-Empowering industries with AI-driven insights through Retrieval Augmented Generation (RAG), simplifying complex tasks like Kubernetes diagnostics and SEC filings into actionable strategies
+Transforming industries by delivering actionable insights through **Retrieval-Augmented Generation (RAG)**, simplifying complex challenges such as Kubernetes diagnostics and SEC filings into intelligent strategies.
+
+## About the Project  
+
+This project was developed for the **"Accelerate App Development with GitHub Copilot"** hackathon, an initiative aimed at empowering the next generation of developers by leveraging GitHub Copilot and Azure to redefine software development.
+
+**Hackathon Details:**  
+[Empowering the Next Generation of Developers with GitHub and Azure](https://github-copilot.devpost.com/)
+
+**Video Demo:**  
+[Watch the demo on YouTube](https://youtu.be/rRmxDKq2mlE)
+
+## Vision  
+
+The ASAP Knowledge Navigator is a pioneering platform designed to showcase how RAG can streamline knowledge retrieval and insight generation across diverse industries. Whether it’s enhancing operational reliability in Kubernetes environments or enabling deep financial analysis of SEC filings, ASAP Knowledge Navigator demonstrates the boundless potential of AI-driven insights.
+
+By harnessing the capabilities of GitHub Copilot and Azure’s robust infrastructure, this project delivers solutions that are scalable, secure, and tailored to industry-specific challenges.
+
 
 <p align="center">
     <img src="https://raw.githubusercontent.com/aitrailblazer/ASAPKnowledgeNavigator/refs/heads/main/ASAPKnowledgeNavigator.png" alt="ASAP Knowledge Navigator" width="640">
