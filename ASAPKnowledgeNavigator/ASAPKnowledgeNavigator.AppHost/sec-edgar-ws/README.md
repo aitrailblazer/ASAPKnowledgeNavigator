@@ -133,3 +133,75 @@ curl -X POST http://localhost:8000/html-to-pdf \
      -d @<(jq -Rs '{html: .}' < TSLA_10K.html) \
      -o TSLA_10K.pdf
 
+## Endpoints Documentation
+
+### `/cik/{ticker}`
+- **Purpose**: Fetch the CIK (Central Index Key) for a given company ticker.
+- **Example Usage**:
+  ```bash
+  curl http://localhost:8000/cik/AAPL
+  ```
+
+### `/filings/{ticker}`
+- **Purpose**: Fetch all filings for a given company ticker.
+- **Example Usage**:
+  ```bash
+  curl http://localhost:8000/filings/TSLA
+  ```
+
+### `/filing/html/{ticker}/{form_type}`
+- **Purpose**: Fetch the latest filing of a specified form type as raw HTML.
+- **Example Usage**:
+  ```bash
+  curl -o TSLA_10K.html http://localhost:8000/filing/html/TSLA/10-K
+  ```
+
+### `/filing/pdf/{ticker}/{form_type}`
+- **Purpose**: Fetch the latest filing of a specified form type as a PDF.
+- **Example Usage**:
+  ```bash
+  curl -o TSLA_4.pdf http://localhost:8000/filing/pdf/TSLA/4
+  ```
+
+### `/forms/{ticker}`
+- **Purpose**: Fetch all unique forms available for a given company ticker.
+- **Example Usage**:
+  ```bash
+  curl http://localhost:8000/forms/AAPL
+  ```
+
+### `/10k/pdf/{ticker}`
+- **Purpose**: Fetch the latest 10-K as a PDF.
+- **Example Usage**:
+  ```bash
+  curl -o AAPL_10K.pdf http://localhost:8000/10k/pdf/AAPL
+  ```
+
+### `/10k/html/{ticker}`
+- **Purpose**: Fetch the latest 10-K as raw HTML.
+- **Example Usage**:
+  ```bash
+  curl -o AAPL_10K.html http://localhost:8000/10k/html/AAPL
+  ```
+
+### `/xbrl/{ticker}`
+- **Purpose**: Fetch XBRL data as JSON.
+- **Example Usage**:
+  ```bash
+  curl http://localhost:8000/xbrl/AAPL?concept=AssetsCurrent&unit=USD
+  ```
+
+### `/xbrl/concepts/{ticker}`
+- **Purpose**: List all available XBRL concepts for a given company ticker.
+- **Example Usage**:
+  ```bash
+  curl -o AAPLconcepts.json http://localhost:8000/xbrl/concepts/AAPL
+  ```
+
+### `/xbrl/plot/{ticker}`
+- **Purpose**: Plot XBRL data.
+- **Example Usage**:
+  ```bash
+  curl -o AAPL_AssetsCurrent.html "http://localhost:8000/xbrl/plot/AAPL?concept=AssetsCurrent&unit=USD"
+  ```
+
