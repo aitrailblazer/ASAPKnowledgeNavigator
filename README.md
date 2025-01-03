@@ -6,6 +6,59 @@ Empowering industries with AI-driven insights through Retrieval Augmented Genera
     <img src="https://raw.githubusercontent.com/aitrailblazer/ASAPKnowledgeNavigator/refs/heads/main/ASAPKnowledgeNavigator.png" alt="ASAP Knowledge Navigator" width="640">
 </p>
 
+# Table of Contents
+
+- [ASAP Knowledge Navigator: Harnessing RAG for Enhanced Knowledge Retrieval and Insight Generation](#asap-knowledge-navigator-harnessing-rag-for-enhanced-knowledge-retrieval-and-insight-generation)
+  - [Inspiration](#inspiration)
+  - [Addressing Common and Domain-Specific Challenges Through AI and Automation](#addressing-common-and-domain-specific-challenges-through-ai-and-automation)
+    - [Addressing SEC EDGAR Filings Pain Points](#addressing-sec-edgar-filings-pain-points)
+    - [Addressing Kubernetes and SEC Pain Points](#addressing-kubernetes-and-sec-pain-points)
+  - [What It Does](#what-it-does)
+    - [How ASAP Knowledge Navigator Leverages RAG for Enhanced Knowledge Retrieval](#how-asap-knowledge-navigator-leverages-rag-for-enhanced-knowledge-retrieval)
+    - [AI-Driven Analytics with ASAP Knowledge Navigator](#ai-driven-analytics-with-asap-knowledge-navigator)
+    - [ASAP Knowledge Navigator for SEC EDGAR Filings Analysis](#asap-knowledge-navigator-for-sec-edgar-filings-analysis)
+    - [Use Cases for AI-Powered SEC Filing Analysis with ASAP Knowledge Navigator](#use-cases-for-ai-powered-sec-filing-analysis-with-asap-knowledge-navigator)
+  - [Project Components](#project-components)
+    - [1. ASAP SEC-RAG-Navigator: command-line tools](#1-asap-sec-rag-navigator-command-line-tools)
+      - [Tool 1: `sec-edgar`](#tool-1-sec-edgar)
+      - [Tool 2: `SEC-RAG-Navigator-db`](#tool-2-sec-rag-navigator-db)
+    - [2. ASAP Knowledge Navigator - .net 9 Aspire project](#2-asap-knowledge-navigator---net-9-aspire-project)
+      - [SEC-EDGAR-WS](#sec-edgar-ws)
+      - [go-sec-edgar-ws](#go-sec-edgar-ws)
+    - [3. ASAP-AzureKubernetesService-log-analyzer-RAG: command-line tools](#3-asap-azurekubernetesservice-log-analyzer-rag-command-line-tools)
+      - [Tool: GitHubActionTriggerCLI](#tool-githubactiontriggercli)
+      - [Tool: GitHubActionTriggerOnnxRAGCLI](#tool-githubactiontriggeronnxragcli)
+  - [Challenges We Ran Into](#challenges-we-ran-into)
+  - [What We Learned](#what-we-learned)
+  - [What's Next for ASAP Knowledge Navigator](#whats-next-for-asap-knowledge-navigator)
+  - [Strategic Validation of ASAP Knowledge Navigator](#strategic-validation-of-asap-knowledge-navigator)
+    - [Core Drivers Validation](#core-drivers-validation)
+    - [Feedback Loop Stress Testing](#feedback-loop-stress-testing)
+    - [Cross-Domain Verification](#cross-domain-verification)
+    - [Probability and Uncertainty Assessment](#probability-and-uncertainty-assessment)
+    - [Purpose Alignment and Integrity](#purpose-alignment-and-integrity)
+  - [Technologies](#technologies)
+    - [Development Languages & Frameworks](#development-languages--frameworks)
+    - [Frontend Technologies](#frontend-technologies)
+    - [AI & Machine Learning](#ai--machine-learning)
+    - [Cloud & Infrastructure](#cloud--infrastructure)
+    - [DevOps & Automation](#devops--automation)
+    - [Other Tools & Libraries](#other-tools--libraries)
+    - [Emphasis on GitHub Copilot](#emphasis-on-github-copilot)
+  - [Functionality of ASAPKnowledgeNavigator](#functionality-of-asapknowledgenavigator)
+    - [Environment Variables](#environment-variables)
+    - [Exporting Environment Variables](#exporting-environment-variables)
+    - [Key Features](#key-features)
+  - [Analysis of ASAPKnowledgeNavigator.AppHost](#analysis-of-asapknowledgenavigatorapphost)
+    - [Overview](#overview)
+    - [Key Components](#key-components)
+    - [Role in the Project](#role-in-the-project)
+  - [Analysis of ASAPKnowledgeNavigator.Web](#analysis-of-asapknowledgenavigatorweb)
+    - [Overview](#overview-1)
+    - [Key Features](#key-features-1)
+    - [Role in the Project](#role-in-the-project-1)
+  - [Summary](#summary)
+
 ## Inspiration
 
 The ASAP Knowledge Navigator project was created to showcase how Retrieval-Augmented Generation (RAG) can transform knowledge retrieval and insight generation across various industries. From streamlining the analysis of regulatory filings such as SEC EDGAR to simplifying technical operations like Kubernetes management, this versatile tool proves its value in diverse applications. By combining RAG with Azure's robust infrastructure, the platform leverages scalable computing power, seamless integration capabilities, and enterprise-grade security to tackle complex challenges with advanced AI. This combination ensures efficient, actionable solutions tailored to specific industry needs. EDGAR and Kubernetes are just two examples of the many ways ASAP Knowledge Navigator can make a meaningful impact.
@@ -127,10 +180,12 @@ ASAP Knowledge Navigator's innovative approach to analyzing SEC EDGAR filings so
 
 The ASAP Knowledge Navigator project encompasses several innovative tools designed to tackle industry-specific challenges. Here's a breakdown of each component:
 
-### 1. ASAP SEC-RAG-Navigator
+### 1. ASAP SEC-RAG-Navigator: command-line tools
+
 <p align="center">
     <img src="https://raw.githubusercontent.com/aitrailblazer/ASAPKnowledgeNavigator/refs/heads/main/ASAPKnowledgeNavigator-05.png" alt="ASAP Knowledge Navigator" width="640">
 </p>
+
 #### Overview
 
 **ASAP SEC-RAG-Navigator** is a comprehensive solution designed to streamline the retrieval, processing, and analysis of SEC EDGAR filings. It consists of two powerful tools—**sec-edgar** and **SEC-RAG-Navigator-db**—that leverage **Retrieval-Augmented Generation (RAG)** and advanced AI to transform complex financial data into actionable insights.
@@ -158,6 +213,7 @@ The ASAP Knowledge Navigator project encompasses several innovative tools design
 <p align="center">
     <img src="https://raw.githubusercontent.com/aitrailblazer/ASAPKnowledgeNavigator/refs/heads/main/ASAPKnowledgeNavigator-06.png" alt="ASAP Knowledge Navigator" width="640">
 </p>
+
 **Functionality:**
 
 `SEC-RAG-Navigator-db` extends the capabilities of `sec-edgar` by analyzing the retrieved filings, enriching them with vector embeddings, and enabling semantic search and conversational insights.
@@ -223,7 +279,7 @@ The ASAP Knowledge Navigator project encompasses several innovative tools design
     -   Use RAG models to transform raw filings into enriched, AI-powered insights.
 
 
-#### 2. ASAP Knowledge Navigator
+### 2. ASAP Knowledge Navigator - .net 9 Aspire project
 
 **ASAP Knowledge Navigator** is an advanced AI-powered project designed to enhance knowledge navigation and retrieval. It builds upon the foundation laid by **SEC-EDGAR-WS** and **SEC-RAG-Navigator-db**, providing a user-friendly interface for querying and interacting with SEC filings. Leveraging .NET 9 Aspire for cutting-edge front-end and back-end development and Fluent UI for a modern and intuitive user experience, this tool enables users to perform natural language searches like:
 
@@ -233,32 +289,28 @@ ASAP Knowledge Navigator seamlessly integrates with other tools in the suite, en
 
 ---
 
-# SEC-EDGAR-WS
+#### SEC-EDGAR-WS
 
 **SEC-EDGAR-WS** is a Python-based web service designed to streamline the retrieval and processing of financial data from the SEC EDGAR RESTful APIs. It supports critical features such as company identification, filing history retrieval, and specific filing downloads, with built-in support for HTML and PDF exports. The service is containerized using Docker, making it easy to integrate into larger applications like .NET Aspire solutions.
 
----
+##### Key Features
 
-## Key Features
+- **Retrieve Company CIKs by Ticker**  
+  Easily fetch a company's Central Index Key (CIK) using its stock ticker for further analysis.
 
-### Retrieve Company CIKs by Ticker
-Easily fetch a company's Central Index Key (CIK) using its stock ticker for further analysis.
+- **Filing History Retrieval**  
+  Access a company's complete filing history, including detailed form types like 10-K, 10-Q, and 8-K.
 
-### Filing History Retrieval
-Access a company's complete filing history, including detailed form types like 10-K, 10-Q, and 8-K.
+- **Download and Save Filings**  
+  Export filings as HTML or PDF documents using WeasyPrint for streamlined accessibility.
 
-### Download and Save Filings
-Export filings as HTML or PDF documents using WeasyPrint for streamlined accessibility.
+- **XBRL Data Processing**  
+  Query and visualize specific financial concepts from filings, with support for data plotting.
 
-### XBRL Data Processing
-Query and visualize specific financial concepts from filings, with support for data plotting.
+- **RESTful Endpoints**  
+  User-friendly API endpoints provide seamless access to all features, making it easy to integrate into other systems or workflows.
 
-### RESTful Endpoints
-User-friendly API endpoints provide seamless access to all features, making it easy to integrate into other systems or workflows.
-
----
-
-## Technology Stack
+##### Technology Stack
 
 - **Backend**: Python  
 - **Deployment**: Dockerized for container-based builds and integration.  
@@ -266,9 +318,7 @@ User-friendly API endpoints provide seamless access to all features, making it e
 - **PDF Rendering**: WeasyPrint  
 - **Visualization**: XBRL plotting for data insights.  
 
----
-
-## Integration with .NET Aspire and ASAP Knowledge Navigator
+##### Integration with .NET Aspire and ASAP Knowledge Navigator
 
 **SEC-EDGAR-WS** is a foundational component of the broader **ASAP Knowledge Navigator** project, providing back-end support for querying and analyzing SEC filings. Its seamless Docker-based integration allows .NET Aspire applications to interact with Python-based APIs, unlocking advanced financial search capabilities. Users can perform natural language queries such as:
 
@@ -279,35 +329,29 @@ This integration is powered by **.NET 9 Aspire**, which enables advanced front-e
 
 ---
 
-# go-sec-edgar-ws
+#### go-sec-edgar-ws
 
 **go-sec-edgar-ws** is a Go-based web service dedicated to converting HTML documents into PDF format. This service is particularly useful for transforming SEC filing documents retrieved by **SEC-EDGAR-WS** into PDFs, enhancing document accessibility and distribution. Containerized with Docker, it integrates seamlessly into larger applications, including those built with .NET Aspire.
 
----
+##### Key Features
 
-## Key Features
+- **HTML to PDF Conversion**  
+  Efficiently convert HTML documents into high-quality PDFs, facilitating easy sharing and printing of SEC filings.
 
-### HTML to PDF Conversion
-Efficiently convert HTML documents into high-quality PDFs, facilitating easy sharing and printing of SEC filings.
+- **RESTful API**  
+  Provides straightforward endpoints for submitting HTML content and receiving PDF outputs, simplifying integration into various workflows.
 
-### RESTful API
-Provides straightforward endpoints for submitting HTML content and receiving PDF outputs, simplifying integration into various workflows.
+- **Performance and Scalability**  
+  Built with Go, the service offers robust performance and can handle multiple conversion requests concurrently.
 
-### Performance and Scalability
-Built with Go, the service offers robust performance and can handle multiple conversion requests concurrently.
-
----
-
-## Technology Stack
+##### Technology Stack
 
 - **Backend**: Go  
 - **Deployment**: Dockerized for container-based builds and integration.  
 - **API Framework**: Standard library net/http  
 - **PDF Rendering**: Utilizes third-party Go libraries for PDF generation.  
 
----
-
-## Integration with SEC-EDGAR-WS and .NET Aspire
+##### Integration with SEC-EDGAR-WS and .NET Aspire
 
 **go-sec-edgar-ws** complements **SEC-EDGAR-WS** by providing an efficient solution for converting retrieved HTML filings into PDF format. Through Docker-based containerization, it integrates smoothly with .NET Aspire applications, enabling features such as:
 
@@ -319,37 +363,18 @@ This integration ensures that applications can offer comprehensive document proc
 
 ---
 
-By incorporating both **SEC-EDGAR-WS** and **go-sec-edgar-ws**, along with the overarching **ASAP Knowledge Navigator**, developers can create a robust, scalable, and user-friendly platform for accessing, analyzing, and managing SEC filings and related financial documents.
+#### Azure Resources Used
+
+- **Azure OpenAI Service**: Facilitates natural language processing tasks such as text completion and embeddings.
+- **Azure Cosmos DB**: Stores globally distributed knowledge base data with multi-model capabilities.
+- **Azure Container Registry (ACR)**: Hosts container images for deployment.
+- **Azure Container Apps Environment**: Runs containerized applications using Azure Container Apps.
+- **Log Analytics Workspace**: Collects logs from various Azure services for monitoring and diagnostics.
+- **User Assigned Managed Identity**: Provides secure authentication without embedding credentials in code.
 
 ---
 
-## Azure Resources Used
-
-### 1. Azure OpenAI Service
-
--   **Purpose**: Facilitates natural language processing tasks such as text completion and embeddings.
-
-### 2. Azure Cosmos DB
-
--   **Purpose**: Stores globally distributed knowledge base data with multi-model capabilities.
-
-### 3. Azure Container Registry (ACR)
-
--   **Purpose**: Hosts container images for deployment.
-
-### 4. Azure Container Apps Environment
-
--   **Purpose**: Runs containerized applications using Azure Container Apps.
-
-### 5. Log Analytics Workspace
-
--   Collects logs from various Azure services for monitoring and diagnostics.
-
-### 6. User Assigned Managed Identity
-
--   Provides secure authentication without embedding credentials in code.
-
----
+By incorporating **SEC-EDGAR-WS**, **go-sec-edgar-ws**, and the overarching **ASAP Knowledge Navigator**, developers can create a robust, scalable, and user-friendly platform for accessing, analyzing, and managing SEC filings and related financial documents.
 
 
 ### ASAP Knowledge Navigator for Kubernetes Pod Failure Detection and Analysis
@@ -364,7 +389,7 @@ Kubernetes, a popular container orchestration platform, can present challenges i
 -   **Addressing pod health check challenges:** ASAP Knowledge Navigator can help organizations overcome challenges related to pod health checks, such as those faced by Pipedrive Infra, where pod health checks would sometimes fail without any apparent reason. By providing real-time monitoring and AI-driven analytics, ASAP Knowledge Navigator can help identify the root cause of such failures and ensure the reliability of applications.
 
 
-### 3. ASAP-AzureKubernetesService-log-analyzer-RAG
+### 3. ASAP-AzureKubernetesService-log-analyzer-RAG: command-line tools
 <p align="center">
     <img src="https://raw.githubusercontent.com/aitrailblazer/ASAPKnowledgeNavigator/refs/heads/main/ASAPKnowledgeNavigator-06.png" alt="ASAP Knowledge Navigator" width="640">
 </p>
