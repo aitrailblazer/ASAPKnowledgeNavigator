@@ -16,6 +16,28 @@ type RequestBody struct {
 }
 
 // pdfHandler handles POST requests to convert HTML to PDF
+// pdfHandler handles HTTP requests to generate a PDF from provided HTML content.
+// It expects a JSON request body with an 'html' field containing the HTML string.
+// The generated PDF is returned as a downloadable file.
+//
+// Request:
+// - Method: POST
+// - Content-Type: application/json
+// - Body: {"html": "<html>...</html>"}
+//
+// Response:
+// - Success:
+//   - Status: 200 OK
+//   - Content-Type: application/pdf
+//   - Content-Disposition: attachment; filename=output.pdf
+//   - Body: PDF file
+//
+// - Failure:
+//   - Status: 400 Bad Request (if 'html' field is missing or invalid JSON)
+//   - Status: 500 Internal Server Error (if PDF generation fails)
+//
+// Example:
+// curl -X POST -H "Content-Type: application/json" -d '{"html": "<html><body>Hello, World!</body></html>"}' http://localhost:8080/pdf
 func pdfHandler(w http.ResponseWriter, r *http.Request) {
 	// Parse the JSON request body
 	var body RequestBody

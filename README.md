@@ -228,8 +228,21 @@ The ASAP Knowledge Navigator project encompasses several innovative tools design
 
 **ASAPKnowledgeNavigator** is an advanced AI-powered project designed to enhance knowledge navigation and retrieval. **It builds upon the foundation laid by `sec-edgar` and `SEC-RAG-Navigator-db`, providing a user-friendly interface for querying and interacting with SEC filings.** Leveraging .NET 9 Aspire for cutting-edge front and back end development and Fluent UI for a modern and intuitive user interface, this tool enables users to perform natural language searches like, **"What are the risk factors in the latest 10-K filing of TSLA?"** ASAPKnowledgeNavigator seamlessly integrates with the other tools in the suite, allowing users to quickly find and understand the information they need.
 
+based on .net 9 Aspire
+
+integrating applications into a .NET Aspire app via Dockerfiles and container-based builds. This is especially helpful to integrate applications written in languages that .NET Aspire does not have a native integration for,
+
 sec-edgar-ws
+Python, Dockerfile, web service
+This project retrieves and processes financial data from the SEC EDGAR RESTful APIs. It includes functionality for:
+- Retrieving company CIKs by ticker.
+- Fetching filing histories.
+- Downloading specific filings.
+
 go-sec-edgar-ws
+for thml to pdf conversion
+Go, Dockerfile, web service
+
 ---
 
 ## Azure Resources Used
