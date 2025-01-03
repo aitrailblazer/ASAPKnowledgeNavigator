@@ -1,4 +1,3 @@
-
 # ASAP Knowledge Navigator: Harnessing RAG for Enhanced Knowledge Retrieval and Insight Generation
 
 Empowering industries with AI-driven insights through Retrieval Augmented Generation (RAG), simplifying complex tasks like Kubernetes diagnostics and SEC filings into actionable strategies
@@ -558,3 +557,82 @@ Here's a comprehensive list of the technologies used across all projects:
 -   **Prompt Engineering and Vectorization Support:** Assisting in the development and refinement of complex prompts and the management of vector embeddings, crucial for the project's success.
 
 ---
+
+## Functionality of ASAPKnowledgeNavigator
+
+ASAPKnowledgeNavigator is an advanced AI-powered project designed to enhance knowledge navigation and retrieval. It leverages cutting-edge AI models, seamless Azure integration, and environment variables for efficient configuration and operation in diverse environments.
+
+### Environment Variables
+
+The following environment variables are required for proper configuration:
+
+- `AZURE_OPENAI_ENDPOINT`: Endpoint URI for Azure OpenAI services.
+- `AZURE_OPENAI_KEY`: API key to authenticate Azure OpenAI services.
+- `PHI_ENDPOINT`: Endpoint URI for the PHI service.
+- `PHI_KEY`: API key for the PHI service.
+- `AZURE_OPENAI_COMPLETION_DEPLOYMENT_NAME`: Deployment name for text completion service.
+- `AZURE_OPENAI_EMBEDDING_DEPLOYMENT_NAME`: Deployment name for embedding service.
+- `COSMOS_DB_CONNECTION_STRING`: Connection string for Azure Cosmos DB.
+- `COSMOS_DB_DATABASE_ID`: Database ID in Cosmos DB.
+
+### Exporting Environment Variables
+
+Export these variables as follows:
+
+```bash
+export AZURE_OPENAI_ENDPOINT=<...>
+export AZURE_OPENAI_KEY=<...>
+export AZURE_OPENAI_COMPLETION_DEPLOYMENT_NAME=<...>
+export AZURE_OPENAI_EMBEDDING_DEPLOYMENT_NAME=<...>
+export PHI_ENDPOINT=<...>
+export PHI_KEY=<...>
+export COSMOS_DB_CONNECTION_STRING="<...>"
+export COSMOS_DB_DATABASE_ID="<...>"
+```
+
+### Key Features
+
+1. **Advanced AI Models:** Utilizes state-of-the-art AI models for natural language processing, text completion, and embeddings.
+2. **Seamless Azure Integration:** Integrates with Azure services for scalable computing power, data storage, and security.
+3. **Environment Variable Configuration:** Ensures efficient configuration and operation in diverse environments through environment variables.
+4. **User-Friendly Interface:** Provides an intuitive and user-friendly interface for querying and interacting with SEC filings.
+
+## Analysis of ASAPKnowledgeNavigator.AppHost
+
+### Overview
+
+`ASAPKnowledgeNavigator.AppHost` is a critical component of the ASAPKnowledgeNavigator project. It serves as the application host, orchestrating various services and components to ensure seamless operation and integration.
+
+### Key Components
+
+1. **API Service Integration:** Integrates with the `ASAPKnowledgeNavigator.ApiService` project to provide API endpoints for data retrieval and processing.
+2. **Web Frontend Integration:** Integrates with the `ASAPKnowledgeNavigator.Web` project to provide a user-friendly interface for querying and interacting with SEC filings.
+3. **Python App Integration:** Integrates with the `sec-edgar-ws` Python app for retrieving and processing financial data from the SEC EDGAR RESTful APIs.
+4. **Golang App Integration:** Integrates with the `go-sec-edgar-ws` Golang app for HTML to PDF conversion.
+
+### Role in the Project
+
+`ASAPKnowledgeNavigator.AppHost` plays a crucial role in orchestrating various services and components, ensuring seamless integration and operation. It provides the necessary infrastructure to support the functionality of the ASAPKnowledgeNavigator project.
+
+## Analysis of ASAPKnowledgeNavigator.Web
+
+### Overview
+
+`ASAPKnowledgeNavigator.Web` is the web frontend component of the ASAPKnowledgeNavigator project. It provides a user-friendly interface for querying and interacting with SEC filings.
+
+### Key Features
+
+1. **Natural Language Querying:** Allows users to perform natural language searches to retrieve relevant information from SEC filings.
+2. **Interactive User Interface:** Provides an intuitive and interactive user interface for easy navigation and interaction.
+3. **Real-Time Data Retrieval:** Enables real-time retrieval and processing of SEC filings, ensuring up-to-date information.
+4. **Integration with Backend Services:** Seamlessly integrates with backend services for data retrieval, processing, and analysis.
+
+### Role in the Project
+
+`ASAPKnowledgeNavigator.Web` plays a vital role in providing a user-friendly interface for querying and interacting with SEC filings. It enhances the overall user experience by enabling natural language querying and real-time data retrieval.
+
+---
+
+## Summary
+
+ASAPKnowledgeNavigator integrates seamlessly with multiple Azure services to deliver powerful knowledge retrieval capabilities through its scalable architecture optimized for efficiency and flexibility—a robust solution tailored for advanced knowledge navigation needs!
