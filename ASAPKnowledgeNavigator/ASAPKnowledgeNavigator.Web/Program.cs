@@ -50,7 +50,8 @@ builder.Services.AddOutputCache();
 // Register SemanticKernelService
 RegisterSemanticKernelService(builder.Services);
 
-string azureCosmosDbEndpointUri = "https://aitrailblazer-asap.documents.azure.com:443/";
+string azureCosmosDbEndpointUri = GetEnvironmentVariable("azureCosmosDbEndpointUri");
+
 string AzureCosmosDBNoSQLDatabaseName = "asapdb";
 string knowledgeBaseContainerName = "secrag"; // rag
 

@@ -18,6 +18,11 @@ ASAP Knowledge Navigator is a comprehensive initiative composed of three primary
 ---
 ## Inspiration
 
+<p align="center">
+    <img src="https://raw.githubusercontent.com/aitrailblazer/ASAPKnowledgeNavigator/refs/heads/main/ASAPKnowledgeNavigator.png" alt="ASAP Knowledge Navigator" width="640">
+</p>
+
+
 The ASAP Knowledge Navigator project was created to showcase how Retrieval-Augmented Generation (RAG) can transform knowledge retrieval and insight generation across various industries. From streamlining the analysis of regulatory filings such as SEC EDGAR to simplifying technical operations like Kubernetes management, this versatile tool proves its value in diverse applications. By combining RAG with Azure's robust infrastructure, the platform leverages scalable computing power, seamless integration capabilities, and enterprise-grade security to tackle complex challenges with advanced AI. This combination ensures efficient, actionable solutions tailored to specific industry needs. EDGAR and Kubernetes are just two examples of the many ways ASAP Knowledge Navigator can make a meaningful impact.
 
 ### Addressing Common and Domain-Specific Challenges Through AI and Automation
@@ -444,66 +449,58 @@ This segment features two powerful tools for automating the detection, analysis,
 -   **Risk (Continued):** Over-reliance on semantic search accuracy; mitigated by continuous refinement of prompt engineering, incorporating human-in-the-loop validation, and diversifying data used for vectorization.
 ---
 
+## Technologies Used in ASAP Knowledge Navigator
 
----
+### Development Languages & Frameworks
+- **.NET 9.0 SDK**: For building applications with C#, F#, and Visual Basic.
+- **.NET 9 Aspire**: Framework for cloud-native, resilient, and observable applications (using **C#**).
+- **Python 3.x**: Scripting, data processing, and AI model integration.
+- **.NET 9 C#**: Primary language for backend development.
+- **Go (Golang)**: For backend services like HTML to PDF conversion.
+- **Blazor**: Framework for building interactive web UIs using C# and .NET.
 
-## Technologies
+### Frontend Technologies
+- **Fluent UI**: UX frameworks for creating cross-platform user experiences.
+- **Blazor Components**: For building reusable, interactive components in the web frontend.
 
-The ASAP Knowledge Navigator project leverages a wide array of cutting-edge technologies. **Throughout the development process, GitHub Copilot played a crucial role, providing intelligent code suggestions, automating repetitive tasks, and accelerating the overall development workflow.** It was particularly helpful in refining prompt engineering strategies and managing vector embeddings.
+### AI & Machine Learning
+- **Azure OpenAI Service**: For natural language processing, text completion, and embeddings.
+- **Microsoft.SemanticKernel**: Library for AI applications with NLP and semantic search.
+- **Microsoft.ML.OnnxRuntime**: High-performance ONNX model engine.
+- **Microsoft.ML.OnnxRuntimeGenAI**: Enhances ONNX Runtime with generative AI.
+- **Microsoft.SemanticKernel.Connectors.Onnx**: ONNX model integration with Semantic Kernel.
+- **DiskANN**: High-performance vector indexing and similarity search in Azure Cosmos DB.
+- **ONNX Models**: Deployment of various machine learning models.
+- **Sophisticated Prompt Engineering**: For accuracy and relevance in AI responses.
+- **Vectorization Techniques**: For contextual AI understanding and search optimization.
 
-Here's a comprehensive list of the technologies used across all projects:
+#### LLM Models Used
+- **Azure OpenAI Models**: Custom-deployed versions of OpenAI's GPT models for enhanced control and scalability. 
+    - **GPT-4o**: Advanced text completion and generative AI for deep analysis and insights.
+    - **Phi-3.5-MoE-instruct**: Lightweight and efficient for processing natural language queries and retrieval tasks with Mixture of Experts architecture.
+- **Custom ONNX-Based LLMs**: Phi-3.5-MoE-instruct. Optimized for specific use cases like SEC filings and Kubernetes diagnostics.
 
-### Development Languages & Frameworks:
+### Cloud & Infrastructure
+- **Microsoft Azure**:
+  - **Azure AI Foundry**: Building, training, and deploying scalable AI solutions.
+  - **Azure Kubernetes Service (AKS)**: For containerized application management.
+  - **Azure Container Apps**: Running microservices.
+  - **Azure Container Registry (ACR)**: Hosting container images.
+  - **Azure Cosmos DB**: NoSQL database for storing filings and vector embeddings.
+  - **Log Analytics Workspace**: Logs collection and diagnostics.
+  - **User Assigned Managed Identity**: Secure Azure resource authentication.
 
--   **.NET 9.0 SDK:** A cross-platform development kit for building applications with C#, F#, and Visual Basic.
--   **.NET 9 Aspire:** A framework for building cloud-native, resilient, and observable applications.
--   **Python 3.x:** Used for scripting, data processing, and integrating with certain AI models.
--   **.NET 9 C#:** Primary language for backend development, leveraging the latest features and performance improvements of .NET 9.
+### DevOps & Automation
+- **GitHub Actions**: CI/CD pipelines for automating builds, tests, and deployments.
+- **KubernetesClient**: .NET library for Kubernetes cluster interaction.
 
-### Frontend Technologies:
+### Other Tools & Libraries
+- **SEC EDGAR RESTful APIs**: For retrieving financial filings data.
+- **Docker**: Containerization for microservices and app deployments.
+- **WeasyPrint**: For rendering PDFs in Python applications.
 
--   **Fluent UI:** A collection of UX frameworks for creating beautiful, cross-platform user experiences.
+### Additional Key Tools
+- **GitHub Copilot**: AI-powered coding assistant for development (using **C#**, **Python**, **Go**, and **Blazor**).
+- **Log Analytics**: Monitoring Azure services and logs.
 
-### AI & Machine Learning:
-
--   **Azure OpenAI Service:** Used for natural language processing, text completion, embeddings, and integrating large language models (LLMs).
--   **Microsoft.SemanticKernel:** A library for building AI applications with natural language processing and semantic search capabilities.
--   **Microsoft.ML.OnnxRuntime:** A high-performance engine for running ONNX models across platforms.
--   **Microsoft.ML.OnnxRuntimeGenAI:** Enhances ONNX Runtime with generative AI capabilities.
--   **Microsoft.SemanticKernel.Connectors.Onnx:** Integrates ONNX models with Semantic Kernel.
--   **DiskANN:** For efficient vector indexing and similarity search within Azure Cosmos DB.
--   **ONNX Models:** For deployment of various machine learning models.
-- **Sophisticated Prompt Engineering and Vectorization:** Instead of traditional model tuning, the project heavily relies on carefully crafted prompts and advanced vectorization techniques to guide the AI models and ensure accurate and relevant results.
-
-### Cloud & Infrastructure:
-
--   **Microsoft Azure:** The primary cloud platform for hosting and managing the project.
-    -   **Azure AI Foundry:** Used for building, training, and deploying scalable AI solutions.
-    -   **Azure Kubernetes Service (AKS):** For deploying and managing containerized applications.
-    -   **Azure Container Apps:** Used for running containerized applications, especially suitable for microservices.
-    -   **Azure Container Registry (ACR):** For hosting and managing container images.
-    -   **Azure Cosmos DB:** Used as a NoSQL database for storing filings, vector embeddings, and other data.
-    -   **Log Analytics Workspace:** For collecting and analyzing logs from various Azure services.
-    -   **User Assigned Managed Identity:** For secure authentication to Azure resources.
-
-### DevOps & Automation:
-
--   **GitHub Actions:** Used for CI/CD pipelines, automating builds, tests, and deployments.
--   **KubernetesClient:** A .NET library for interacting with Kubernetes clusters.
-
-### Other Tools & Libraries:
-
--   **SEC EDGAR RESTful APIs:** For retrieving financial filings data.
-
-**Emphasis on GitHub Copilot:**
-
-**GitHub Copilot was instrumental throughout the development lifecycle, significantly enhancing productivity by:**
-
--   **Code Autocompletion:** Suggesting entire lines or blocks of code, reducing the amount of manual typing and speeding up development.
--   **Bug Detection and Resolution:** Identifying potential errors and suggesting fixes, improving code quality.
--   **Refactoring Assistance:** Helping to refactor code for better readability and maintainability.
--   **Learning and Exploration:** Providing quick access to documentation and examples, facilitating learning about new libraries.
--   **Prompt Engineering and Vectorization Support:** Assisting in the development and refinement of complex prompts and the management of vector embeddings, crucial for the project's success.
-
----
-
+--

@@ -752,7 +752,7 @@ export COSMOS_DB_DATABASE_ID="<...>"
 
 #### LLM Models Used
 - **GPT-4**: Advanced text completion and generative AI for deep analysis and insights.
-- **Phi-3.5-MoE**: Lightweight and efficient for processing natural language queries and retrieval tasks with Mixture of Experts architecture.
+- **Phi-3.5-MoE-instruct**: Lightweight and efficient for processing natural language queries and retrieval tasks with Mixture of Experts architecture.
 - **Azure OpenAI Models**: Custom-deployed versions of OpenAI's GPT models for enhanced control and scalability.
 - **Custom ONNX-Based LLMs**: Optimized for specific use cases like SEC filings and Kubernetes diagnostics.
 
