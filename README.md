@@ -108,6 +108,7 @@ By harnessing the capabilities of **GitHub Copilot** and **Azure’s robust infr
     - [Overview](#overview-1)
     - [Key Features](#key-features-1)
     - [Role in the Project](#role-in-the-project-1)
+  - [Technologies Used in ASAP Knowledge Navigator](#technologies-used-in-asap-knowledge-navigator)  
   - [Summary](#summary)
 
 ## Inspiration
@@ -708,6 +709,62 @@ export COSMOS_DB_DATABASE_ID="<...>"
 `ASAPKnowledgeNavigator.Web` plays a vital role in providing a user-friendly interface for querying and interacting with SEC filings. It enhances the overall user experience by enabling natural language querying and real-time data retrieval.
 
 ---
+
+## Technologies Used in ASAP Knowledge Navigator
+
+### Development Languages & Frameworks
+- **.NET 9.0 SDK**: For building applications with C#, F#, and Visual Basic.
+- **.NET 9 Aspire**: Framework for cloud-native, resilient, and observable applications (using **C#**).
+- **Python 3.x**: Scripting, data processing, and AI model integration.
+- **.NET 9 C#**: Primary language for backend development.
+- **Go (Golang)**: For backend services like HTML to PDF conversion.
+- **Blazor**: Framework for building interactive web UIs using C# and .NET.
+
+### Frontend Technologies
+- **Fluent UI**: UX frameworks for creating cross-platform user experiences.
+- **Blazor Components**: For building reusable, interactive components in the web frontend.
+
+### AI & Machine Learning
+- **Azure OpenAI Service**: For natural language processing, text completion, and embeddings.
+- **Microsoft.SemanticKernel**: Library for AI applications with NLP and semantic search.
+- **Microsoft.ML.OnnxRuntime**: High-performance ONNX model engine.
+- **Microsoft.ML.OnnxRuntimeGenAI**: Enhances ONNX Runtime with generative AI.
+- **Microsoft.SemanticKernel.Connectors.Onnx**: ONNX model integration with Semantic Kernel.
+- **DiskANN**: High-performance vector indexing and similarity search in Azure Cosmos DB.
+- **ONNX Models**: Deployment of various machine learning models.
+- **Sophisticated Prompt Engineering**: For accuracy and relevance in AI responses.
+- **Vectorization Techniques**: For contextual AI understanding and search optimization.
+
+#### LLM Models Used
+- **GPT-4**: Advanced text completion and generative AI for deep analysis and insights.
+- **Phi-3.5-MoE**: Lightweight and efficient for processing natural language queries and retrieval tasks with Mixture of Experts architecture.
+- **Azure OpenAI Models**: Custom-deployed versions of OpenAI's GPT models for enhanced control and scalability.
+- **Custom ONNX-Based LLMs**: Optimized for specific use cases like SEC filings and Kubernetes diagnostics.
+
+### Cloud & Infrastructure
+- **Microsoft Azure**:
+  - **Azure AI Foundry**: Building, training, and deploying scalable AI solutions.
+  - **Azure Kubernetes Service (AKS)**: For containerized application management.
+  - **Azure Container Apps**: Running microservices.
+  - **Azure Container Registry (ACR)**: Hosting container images.
+  - **Azure Cosmos DB**: NoSQL database for storing filings and vector embeddings.
+  - **Log Analytics Workspace**: Logs collection and diagnostics.
+  - **User Assigned Managed Identity**: Secure Azure resource authentication.
+
+### DevOps & Automation
+- **GitHub Actions**: CI/CD pipelines for automating builds, tests, and deployments.
+- **KubernetesClient**: .NET library for Kubernetes cluster interaction.
+
+### Other Tools & Libraries
+- **SEC EDGAR RESTful APIs**: For retrieving financial filings data.
+- **Docker**: Containerization for microservices and app deployments.
+- **WeasyPrint**: For rendering PDFs in Python applications.
+
+### Additional Key Tools
+- **GitHub Copilot**: AI-powered coding assistant for development (using **C#**, **Python**, **Go**, and **Blazor**).
+- **Log Analytics**: Monitoring Azure services and logs.
+
+--
 
 ## Summary
 
