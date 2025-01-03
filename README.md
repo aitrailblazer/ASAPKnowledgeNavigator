@@ -224,24 +224,103 @@ The ASAP Knowledge Navigator project encompasses several innovative tools design
     -   Use RAG models to transform raw filings into enriched, AI-powered insights.
 
 
-####  2. ASAP Knowledge Navigator
+#### 2. ASAP Knowledge Navigator
 
-**ASAPKnowledgeNavigator** is an advanced AI-powered project designed to enhance knowledge navigation and retrieval. **It builds upon the foundation laid by `sec-edgar` and `SEC-RAG-Navigator-db`, providing a user-friendly interface for querying and interacting with SEC filings.** Leveraging .NET 9 Aspire for cutting-edge front and back end development and Fluent UI for a modern and intuitive user interface, this tool enables users to perform natural language searches like, **"What are the risk factors in the latest 10-K filing of TSLA?"** ASAPKnowledgeNavigator seamlessly integrates with the other tools in the suite, allowing users to quickly find and understand the information they need.
+**ASAP Knowledge Navigator** is an advanced AI-powered project designed to enhance knowledge navigation and retrieval. It builds upon the foundation laid by **SEC-EDGAR-WS** and **SEC-RAG-Navigator-db**, providing a user-friendly interface for querying and interacting with SEC filings. Leveraging .NET 9 Aspire for cutting-edge front-end and back-end development and Fluent UI for a modern and intuitive user experience, this tool enables users to perform natural language searches like:
 
-based on .net 9 Aspire
+- _"What are the risk factors in the latest 10-K filing of TSLA?"_
 
-integrating applications into a .NET Aspire app via Dockerfiles and container-based builds. This is especially helpful to integrate applications written in languages that .NET Aspire does not have a native integration for,
+ASAP Knowledge Navigator seamlessly integrates with other tools in the suite, enabling users to quickly find and understand critical financial and regulatory information.
 
-sec-edgar-ws
-Python, Dockerfile, web service
-This project retrieves and processes financial data from the SEC EDGAR RESTful APIs. It includes functionality for:
-- Retrieving company CIKs by ticker.
-- Fetching filing histories.
-- Downloading specific filings.
+---
 
-go-sec-edgar-ws
-for thml to pdf conversion
-Go, Dockerfile, web service
+# SEC-EDGAR-WS
+
+**SEC-EDGAR-WS** is a Python-based web service designed to streamline the retrieval and processing of financial data from the SEC EDGAR RESTful APIs. It supports critical features such as company identification, filing history retrieval, and specific filing downloads, with built-in support for HTML and PDF exports. The service is containerized using Docker, making it easy to integrate into larger applications like .NET Aspire solutions.
+
+---
+
+## Key Features
+
+### Retrieve Company CIKs by Ticker
+Easily fetch a company's Central Index Key (CIK) using its stock ticker for further analysis.
+
+### Filing History Retrieval
+Access a company's complete filing history, including detailed form types like 10-K, 10-Q, and 8-K.
+
+### Download and Save Filings
+Export filings as HTML or PDF documents using WeasyPrint for streamlined accessibility.
+
+### XBRL Data Processing
+Query and visualize specific financial concepts from filings, with support for data plotting.
+
+### RESTful Endpoints
+User-friendly API endpoints provide seamless access to all features, making it easy to integrate into other systems or workflows.
+
+---
+
+## Technology Stack
+
+- **Backend**: Python  
+- **Deployment**: Dockerized for container-based builds and integration.  
+- **API Framework**: Flask (or FastAPI, if preferred for async operations).  
+- **PDF Rendering**: WeasyPrint  
+- **Visualization**: XBRL plotting for data insights.  
+
+---
+
+## Integration with .NET Aspire and ASAP Knowledge Navigator
+
+**SEC-EDGAR-WS** is a foundational component of the broader **ASAP Knowledge Navigator** project, providing back-end support for querying and analyzing SEC filings. Its seamless Docker-based integration allows .NET Aspire applications to interact with Python-based APIs, unlocking advanced financial search capabilities. Users can perform natural language queries such as:
+
+- _"What are the recent 10-K risk factors for TSLA?"_  
+- _"Show the assets trend for AAPL over the last three years."_  
+
+This integration is powered by **.NET 9 Aspire**, which enables advanced front-end and back-end development. By containerizing Python-based services using Dockerfiles, the project ensures compatibility and scalability. This approach allows for the integration of applications written in languages not natively supported by .NET Aspire, creating a cohesive and flexible ecosystem for diverse development needs.
+
+---
+
+# go-sec-edgar-ws
+
+**go-sec-edgar-ws** is a Go-based web service dedicated to converting HTML documents into PDF format. This service is particularly useful for transforming SEC filing documents retrieved by **SEC-EDGAR-WS** into PDFs, enhancing document accessibility and distribution. Containerized with Docker, it integrates seamlessly into larger applications, including those built with .NET Aspire.
+
+---
+
+## Key Features
+
+### HTML to PDF Conversion
+Efficiently convert HTML documents into high-quality PDFs, facilitating easy sharing and printing of SEC filings.
+
+### RESTful API
+Provides straightforward endpoints for submitting HTML content and receiving PDF outputs, simplifying integration into various workflows.
+
+### Performance and Scalability
+Built with Go, the service offers robust performance and can handle multiple conversion requests concurrently.
+
+---
+
+## Technology Stack
+
+- **Backend**: Go  
+- **Deployment**: Dockerized for container-based builds and integration.  
+- **API Framework**: Standard library net/http  
+- **PDF Rendering**: Utilizes third-party Go libraries for PDF generation.  
+
+---
+
+## Integration with SEC-EDGAR-WS and .NET Aspire
+
+**go-sec-edgar-ws** complements **SEC-EDGAR-WS** by providing an efficient solution for converting retrieved HTML filings into PDF format. Through Docker-based containerization, it integrates smoothly with .NET Aspire applications, enabling features such as:
+
+- Automated conversion of SEC filings into PDFs upon retrieval.  
+- On-demand HTML to PDF conversion via API calls.  
+- Enhanced document management workflows within the .NET Aspire ecosystem.  
+
+This integration ensures that applications can offer comprehensive document processing capabilities, catering to diverse user needs.
+
+---
+
+By incorporating both **SEC-EDGAR-WS** and **go-sec-edgar-ws**, along with the overarching **ASAP Knowledge Navigator**, developers can create a robust, scalable, and user-friendly platform for accessing, analyzing, and managing SEC filings and related financial documents.
 
 ---
 

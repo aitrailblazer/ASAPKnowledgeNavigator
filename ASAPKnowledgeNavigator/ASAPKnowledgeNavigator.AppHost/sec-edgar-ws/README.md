@@ -1,12 +1,49 @@
 # sec-edgar-ws
+Financial Data Retrieval and Analysis Service
 
-SEC EDGAR Data Project
+# SEC-EDGAR-WS
 
-## Overview
-This project retrieves and processes financial data from the SEC EDGAR RESTful APIs. It includes functionality for:
-- Retrieving company CIKs by ticker.
-- Fetching filing histories.
-- Downloading specific filings.
+**SEC-EDGAR-WS** is a Python-based web service designed to streamline the retrieval and processing of financial data from the SEC EDGAR RESTful APIs. It supports critical features such as company identification, filing history retrieval, and specific filing downloads, with built-in support for HTML and PDF exports. The service is containerized using Docker, making it easy to integrate into larger applications like .NET Aspire solutions.
+
+---
+
+## Key Features
+
+### Retrieve Company CIKs by Ticker
+Easily fetch a company's Central Index Key (CIK) using its stock ticker for further analysis.
+
+### Filing History Retrieval
+Access a company's complete filing history, including detailed form types like 10-K, 10-Q, and 8-K.
+
+### Download and Save Filings
+Export filings as HTML or PDF documents using WeasyPrint for streamlined accessibility.
+
+### XBRL Data Processing
+Query and visualize specific financial concepts from filings, with support for data plotting.
+
+### RESTful Endpoints
+User-friendly API endpoints provide seamless access to all features, making it easy to integrate into other systems or workflows.
+
+---
+
+## Technology Stack
+
+- **Backend**: Python  
+- **Deployment**: Dockerized for container-based builds and integration.  
+- **API Framework**: Flask (or FastAPI, if preferred for async operations).  
+- **PDF Rendering**: WeasyPrint  
+- **Visualization**: XBRL plotting for data insights.  
+
+---
+
+## Integration with .NET Aspire and ASAP Knowledge Navigator
+
+**SEC-EDGAR-WS** is a foundational component of the broader **ASAP Knowledge Navigator** project, providing back-end support for querying and analyzing SEC filings. Its seamless Docker-based integration allows .NET Aspire applications to interact with Python-based APIs, unlocking advanced financial search capabilities. Users can perform natural language queries such as:
+
+- _"What are the recent 10-K risk factors for TSLA?"_  
+- _"Show the assets trend for AAPL over the last three years."_  
+
+This interoperability between the SEC-EDGAR-WS service and .NET Aspire ensures a cohesive user experience across the entire suite.
 
 # main.py Documentation
 
