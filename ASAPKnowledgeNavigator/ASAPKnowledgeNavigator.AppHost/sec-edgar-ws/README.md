@@ -1,4 +1,4 @@
-# sec-edgar
+# sec-edgar-ws
 
 SEC EDGAR Data Project
 
