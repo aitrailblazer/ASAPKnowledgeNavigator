@@ -1011,11 +1011,11 @@ At the end check if the output is full sentence and if it makes sense. If not, g
 
 The output should be maximum of {{maxTokens}}. Try to fit it all in. Don't cut
 
-user:
 - context: {{context}}
-- input: {{input}}
 
-assistant:
+
+
+
 
 
     """;
@@ -1057,12 +1057,18 @@ assistant:
                     //ResponseFormat = new ChatCompletionsResponseFormatJSON()
                 };
 
-                var jsonmessages = JsonSerializer.Serialize(messages);
-                Console.WriteLine($"jsonmessages: {jsonmessages}");
-
+                var options = new JsonSerializerOptions
+                {
+                    WriteIndented = true
+                };
+                var jsonmessages = JsonSerializer.Serialize(messages, options);
+                Console.WriteLine($"jsonmessages:\n{jsonmessages}");
                 // Step 4: Send chat completion request
                 Console.WriteLine("Sending chat completion request...");
                 Azure.Response<ChatCompletions> response = await client.CompleteAsync(requestOptions);
+                jsonmessages = JsonSerializer.Serialize(response, options);
+                Console.WriteLine($"jsonmessages response: {jsonmessages}");
+
                 System.Console.WriteLine(response.Value.Content);
                 Console.WriteLine($"ID: {response.Value.Id}");
                 Console.WriteLine($"Created: {response.Value.Created}");
@@ -1287,7 +1293,7 @@ assistant:
         }
     }
 
- 
+
     static string GetEnvironmentVariable(string variableName)
     {
         return Environment.GetEnvironmentVariable(variableName)

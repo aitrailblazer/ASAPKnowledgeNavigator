@@ -24,6 +24,9 @@ ASAP Knowledge Navigator is a comprehensive initiative composed of three primary
 ### **Hackathon Details**  
 [Empowering the Next Generation of Developers with GitHub and Azure](https://github-copilot.devpost.com/)
 
+### **Hackathon Project Details**  
+[ASAP Knowledge Navigator](https://devpost.com/software/asap-1h45pk)
+
 ## Hackathon Summary and Participation Motivation  
 
 ### Hackathon Summary  
