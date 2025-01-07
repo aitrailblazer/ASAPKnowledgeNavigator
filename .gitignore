@@ -29,7 +29,7 @@ ASAP-SEC-RAG-Navigator-Aspire
 
 .DS_Store
 env.txt
-
+env.md
 # Exclude directories
 infra/
 obj/

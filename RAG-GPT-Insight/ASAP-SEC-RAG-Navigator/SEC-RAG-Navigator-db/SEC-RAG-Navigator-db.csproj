@@ -13,7 +13,7 @@
   <ItemGroup>
     <PackageReference Include="Azure.AI.Inference" Version="1.0.0-beta.2" />
     <PackageReference Include="Azure.AI.OpenAI" Version="2.1.0-beta.2" />
-    <PackageReference Include="OpenAI" Version="2.1.0-beta.2" />
+    <PackageReference Include="Microsoft.ML.Tokenizers.Data.Cl100kBase" Version="1.0.0" />
 
     <PackageReference Include="Azure.Identity" Version="1.13.1" />
     <PackageReference Include="Microsoft.Azure.Cosmos" Version="3.46.0" />
@@ -30,6 +30,7 @@
     <PackageReference Include="Microsoft.SemanticKernel.PromptTemplates.Handlebars" Version="1.32.0" />
     <PackageReference Include="Microsoft.SemanticKernel.Prompty" Version="1.32.0-alpha" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageReference Include="OpenAI" Version="2.1.0-beta.2" />
     <PackageReference Include="UglyToad.PdfPig" Version="1.7.0-custom-5" />
     <PackageReference Include="UglyToad.PdfPig.DocumentLayoutAnalysis" Version="1.7.0-custom-5" />
   </ItemGroup>

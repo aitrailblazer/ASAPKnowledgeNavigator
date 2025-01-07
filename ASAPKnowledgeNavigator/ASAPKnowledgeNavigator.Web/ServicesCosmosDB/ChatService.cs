@@ -282,6 +282,8 @@ public class ChatService
         return completionBuilder.ToString();
     }
 
+ 
+
     /// <summary>
     /// Generates keywords from the provided prompt text.
     /// </summary>

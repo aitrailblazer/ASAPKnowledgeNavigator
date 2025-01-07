@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Threading.Tasks;
+using static System.Environment;
 using Microsoft.Azure.Cosmos;
 using Microsoft.Azure.Cosmos.Fluent;
 using Microsoft.Extensions.DependencyInjection;
@@ -28,6 +29,12 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.ML.Tokenizers;
+using System;
+using Azure.AI.Inference;
+using Azure.Core;
+using System.Text.Json;
+
 class Program
 {
 
@@ -67,6 +74,10 @@ class Program
         Console.WriteLine("  SEC-RAG-Navigator rag-chat-service");
         Console.WriteLine("  SEC-RAG-Navigator knowledge-base-search \"<promptText>\"");
         Console.WriteLine("  SEC-RAG-Navigator phi-3.5-moe-instruct");
+        Console.WriteLine("  SEC-RAG-Navigator phi-3.5-moe-instruct-streaming");
+        Console.WriteLine("  SEC-RAG-Navigator cohere-command-r+");
+        Console.WriteLine("  SEC-RAG-Navigator streaming-cohere-command-r+");
+
     }
 
 
@@ -354,6 +365,18 @@ public class SEC_RAG_NavigatorService
             {
                 await _cosmosDbServiceWorking.HandlePhi35MoEInstructCommandAsyncs();
             }
+            else if (command == "phi-3.5-moe-instruct-streaming")
+            {
+                await _cosmosDbServiceWorking.HandlePhi35MoEInstructStreamingCommandAsyncs();
+            }
+            else if (command == "cohere-command-r+")
+            {
+                await _cosmosDbServiceWorking.HandleCohereCommandRAsync();
+            }
+            else if (command == "streaming-cohere-command-r+")
+            {
+                await _cosmosDbServiceWorking.HandleCohereCommandRStreamingAsync();
+            }
             else
             {
                 Console.WriteLine("Invalid command or missing arguments. Use one of the following:");
@@ -378,6 +401,10 @@ public class SEC_RAG_NavigatorService
         Console.WriteLine("  SEC-RAG-Navigator rag-chat-service");
         Console.WriteLine("  SEC-RAG-Navigator knowledge-base-search \"<promptText>\"");
         Console.WriteLine("  SEC-RAG-Navigator phi-3.5-moe-instruct");
+        Console.WriteLine("  SEC-RAG-Navigator phi-3.5-moe-instruct-streaming");
+        Console.WriteLine("  SEC-RAG-Navigator cohere-command-r+");
+        Console.WriteLine("  SEC-RAG-Navigator streaming-cohere-command-r+");
+
     }
 }
 
@@ -813,6 +840,8 @@ public class CosmosDbServiceWorking
         string endpoint = GetEnvironmentVariable("PHI_ENDPOINT");
         string apiKey = GetEnvironmentVariable("PHI_KEY");
         string modelId = "phi-3-5-moe-instruct";
+        // Initialize the custom tokenizer (e.g., for GPT-4)
+        var tokenizer = TiktokenTokenizer.CreateForModel("gpt-4");
 
         // Kernel builder setup
         var kernelBuilder = Kernel.CreateBuilder();
@@ -825,17 +854,8 @@ public class CosmosDbServiceWorking
         var kernel = kernelBuilder.Build();
 
         // Define the prompt template for general chat
-        var FunctionDefinition = @"""
-You are a helpful, concise, and conversational assistant. Answer user questions accurately and engagingly while keeping responses brief but informative. Follow these instructions:
+        var promptyTemplate = _promptyTemplate;
 
-- Provide helpful responses to general inquiries or open-ended questions.
-- Avoid including irrelevant information or making assumptions.
-- Respond directly to the user's query.
-
-{{$input}}
-
-    """;
-        var paragraphWritingFunction = kernel.CreateFunctionFromPrompt(FunctionDefinition);
 
         // Chat settings
         double temperature = 0.7;
@@ -870,10 +890,27 @@ You are a helpful, concise, and conversational assistant. Answer user questions 
             {
                 Console.Write("Phi3: ");
 
+                // Calculate token count for input using the custom tokenizer
+                int inputTokenCount = tokenizer.CountTokens(userInput);
+                Console.WriteLine($"CustomTokenizer:InputTokenCount: {inputTokenCount}");
+                //var paragraphWritingFunction = kernel.CreateFunctionFromPrompt(FunctionDefinition);
+                var paragraphWritingFunction = new Kernel().CreateFunctionFromPrompty(promptyTemplate);
+
+                // Invoke the function
                 var result = await paragraphWritingFunction.InvokeAsync(kernel, arguments);
 
+                // Retrieve and print the raw result value
                 var resultValue = result.GetValue<string>();
+                Console.WriteLine("Raw Response:");
                 Console.WriteLine(resultValue);
+
+                // Calculate token count for output using the custom tokenizer
+                int outputTokenCount = tokenizer.CountTokens(resultValue);
+                Console.WriteLine($"CustomTokenizer:OutputTokenCount: {outputTokenCount}");
+
+                // Calculate the total token count (input + output)
+                int totalTokenCount = inputTokenCount + outputTokenCount;
+                Console.WriteLine($"CustomTokenizer:TotalTokenCount: {totalTokenCount}");
 
                 Console.WriteLine();
             }
@@ -884,7 +921,394 @@ You are a helpful, concise, and conversational assistant. Answer user questions 
 
         }
     }
+    public IKernelBuilder CreateKernelBuilder(string modelId)
+    {
+        IKernelBuilder kernelBuilder = Kernel.CreateBuilder();
 
+        string deploymentName = modelId;
+        string endpoint = GetEnvironmentVariable("AZURE_OPENAI_ENDPOINT");
+        string apiKey = GetEnvironmentVariable("AZURE_OPENAI_KEY");
+
+
+        int embeddingsdDimensions = 3072;
+
+        //string modelId = "gpt-4o-mini";
+
+        // Create HttpClient with custom headers and timeout
+        var httpClient = new HttpClient();
+        //httpClient.DefaultRequestHeaders.Add("My-Custom-Header", "My Custom Value");
+        httpClient.Timeout = TimeSpan.FromSeconds(300);  // Set NetworkTimeout to 30 seconds
+
+
+        kernelBuilder.AddAzureOpenAIChatCompletion(
+            deploymentName: deploymentName,
+            endpoint: endpoint,
+            apiKey: apiKey,
+            modelId: modelId, // Optional name of the underlying model if the deployment name doesn't match the model name
+                              //serviceId: "YOUR_SERVICE_ID", // Optional; for targeting specific services within Semantic Kernel
+            httpClient: httpClient // Optional; if not provided, the HttpClient from the kernel will be used
+            );
+
+        return kernelBuilder;
+    }
+    public IKernelBuilder CreateKernelBuilderCohere(string modelId)
+    {
+        string endpoint = GetEnvironmentVariable("COHERE_ENDPOINT");
+
+        string apiKey = GetEnvironmentVariable("COHERE_KEY");
+
+        //string modelId = "phi-3-5-moe-instruct";
+        // Create HttpClient with custom headers and timeout
+        var httpClient = new HttpClient();
+        //httpClient.DefaultRequestHeaders.Add("My-Custom-Header", "My Custom Value");
+        httpClient.Timeout = TimeSpan.FromSeconds(300);  // Set NetworkTimeout to 30 seconds
+
+        IKernelBuilder kernelBuilder = Kernel.CreateBuilder()
+        .AddAzureAIInferenceChatCompletion(
+            endpoint: new Uri(endpoint),
+            apiKey: apiKey,
+            modelId: modelId,
+            httpClient: httpClient);
+        return kernelBuilder;
+    }
+
+    // Define promptyTemplate as a global variable
+    private readonly string _promptyTemplate = @"""
+---
+name: AIWritingAssistant
+description: AI Writing Tool designed to cater to a wide range of fields and purposes
+authors:
+  - AITrailblazer
+model:
+  api: completion
+  configuration:
+    type: azure_openai
+  parameters:
+    tools_choice: auto
+---
+system:
+
+You are an AI Writing Tool designed to cater to a wide range of fields and purposes, enabling tailored content creation that meets specific goals and resonates with intended audiences. You are an invaluable resource for organizations and professionals seeking high-quality, goal-aligned content. You streamline the entire writing process, from ideation to the final draft, across various domains and formats.
+
+
+
+Detailed Instruction and Objective
+You are an invaluable resource for organizations and professionals seeking high-quality, goal-aligned content. You streamline the entire writing process, from ideation to the final draft, across various domains and formats.
+
+
+
+Execution Instructions
+You will be presented with a <context> and an <input>. Use the following settings to enhance your response:
+
+ 
+# instructions
+1. **Comprehensive Review:** Carefully read and understand the passage of information provided to ensure full comprehension.
+2. **Analyze `<context>`:** Thoroughly review the `<context>` to fully grasp its background, details, and relevance to the task.
+3. **Examine `<input>`:** Carefully consider the `<input>` to understand the specific instructions or directives it contains.
+4. **Generate Response:** Use the insights from the `<context>` and `<input>` to generate a response that is accurate, relevant, and aligned with the requirements. Make sure your response integrates both the `<context>` and `<input>` effectively to achieve the desired outcome.
+
+**Use American English:**  
+Always use natural, mainstream, contemporary American English. Verify any unfamiliar terms or regional expressions to ensure they are widely recognized and used in American English. Stick to language commonly employed in America.
+
+Always ensure the output text is cohesive, regardless of the complexity of the topic or the context of the conversation. Focus on the structure and unity of the text, using smooth transitions and logical flow to achieve cohesion. The final output should be a well-organized, unified whole without abrupt transitions or disjointed sections.
+
+If the <input> is missing, use the <context> to generate a response.
+If the <context> is missing, use the <input> to generate a response.
+
+Thoroughly review the <context>  and to fully grasp its 
+background, details, and relevance to the task and 
+carefully justify the response in the format:
+<justify>
+  Justification for the response.  
+</justify>
+
+Do <justify> internally do not show it to the user.
+
+Token Flexibility:
+While the target output should aim for a maximum of {{maxTokens}}, the system can allow a slight overflow (e.g., up to 520 or 550 tokens) if necessary to maintain the integrity and coherence of the response.
+
+
+At the end check if the output is full sentence and if it makes sense. If not, generate a new response.
+
+The output should be maximum of {{maxTokens}}. Try to fit it all in. Don't cut
+
+user:
+- context: {{context}}
+- input: {{input}}
+
+assistant:
+
+
+    """;
+    public async Task HandleCohereCommandRAsync()
+    {
+        // Step 1: Initialize the client with endpoint and API key
+        var client = new ChatCompletionsClient(
+            new Uri(Environment.GetEnvironmentVariable("COHERE_ENDPOINT")), // Ensure this environment variable is set
+            new AzureKeyCredential(Environment.GetEnvironmentVariable("COHERE_KEY")) // Ensure this environment variable is set
+        );
+
+        try
+        {
+            // Step 2: Get model information (optional)
+            var modelInfo = client.GetModelInfo();
+            Console.WriteLine($"Model name: {modelInfo.Value.ModelName}");
+            Console.WriteLine($"Model type: {modelInfo.Value.ModelType}");
+            Console.WriteLine($"Model provider name: {modelInfo.Value.ModelProviderName}");
+            string userInput = "How many languages are in the world?";
+            var promptyTemplate = _promptyTemplate;
+            Console.WriteLine($"promptyTemplate ----- : {promptyTemplate}");
+            Console.WriteLine($"promptyTemplate ----- :");
+
+            // Step 3: Create chat completion request options
+            // Define Messages separately
+            var messages = new List<ChatRequestMessage>
+            {
+                new ChatRequestSystemMessage(promptyTemplate),
+                new ChatRequestUserMessage(userInput)
+            };
+            try
+            {
+                // Construct requestOptions using the separate Messages list
+                var requestOptions = new ChatCompletionsOptions
+                {
+                    Messages = messages,
+                    MaxTokens = 100, // Limit response length
+                    Temperature = 0.7f, // Adjust creativity
+                    //ResponseFormat = new ChatCompletionsResponseFormatJSON()
+                };
+
+                var jsonmessages = JsonSerializer.Serialize(messages);
+                Console.WriteLine($"jsonmessages: {jsonmessages}");
+
+                // Step 4: Send chat completion request
+                Console.WriteLine("Sending chat completion request...");
+                Azure.Response<ChatCompletions> response = await client.CompleteAsync(requestOptions);
+                System.Console.WriteLine(response.Value.Content);
+                Console.WriteLine($"ID: {response.Value.Id}");
+                Console.WriteLine($"Created: {response.Value.Created}");
+                Console.WriteLine($"Model: {response.Value.Model}");
+                Console.WriteLine($"Content: {response.Value.Content}");
+                Console.WriteLine("Usage:");
+                Console.WriteLine($"  Completion Tokens: {response.Value.Usage.CompletionTokens}");
+                Console.WriteLine($"  Prompt Tokens: {response.Value.Usage.PromptTokens}");
+                Console.WriteLine($"  Total Tokens: {response.Value.Usage.TotalTokens}");
+
+                ChatCompletions result = response.Value;
+                Console.WriteLine($"FinishReason: {result.FinishReason}");
+                Console.WriteLine($"Role: {result.Role}");
+            }
+            catch (RequestFailedException ex)
+            {
+                if (ex.Status == 422)
+                {
+                    Console.WriteLine($"Looks like the model doesn't support a parameter: {ex.Message}");
+                }
+                else
+                {
+                    throw;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error: {ex.Message}");
+        }
+    }
+    public async Task HandleCohereCommandRStreamingAsync()
+    {
+        // Step 1: Initialize the client with endpoint and API key
+        var client = new ChatCompletionsClient(
+            new Uri(Environment.GetEnvironmentVariable("COHERE_ENDPOINT")), // Ensure this environment variable is set
+            new AzureKeyCredential(Environment.GetEnvironmentVariable("COHERE_KEY")) // Ensure this environment variable is set
+        );
+
+        try
+        {
+            // Step 2: Prepare the prompt template and user input
+            string userInput = "How many languages are in the world?";
+            var promptyTemplate = _promptyTemplate;
+            Console.WriteLine($"promptyTemplate ----- : {promptyTemplate}");
+            Console.WriteLine($"promptyTemplate ----- :");
+            // Step 3: Create chat completion request options
+            var requestOptions = new ChatCompletionsOptions
+            {
+                Messages = new List<ChatRequestMessage>
+            {
+                new ChatRequestSystemMessage(promptyTemplate),
+                new ChatRequestUserMessage(userInput)
+            },
+                MaxTokens = 4096, // Limit response length
+                Temperature = 0.7f // Adjust creativity
+            };
+
+            // Step 4: Send streaming chat completion request
+            Console.WriteLine("Sending streaming chat completion request...");
+            StreamingResponse<StreamingChatCompletionsUpdate> response = await client.CompleteStreamingAsync(requestOptions);
+
+            // Step 5: Process the streaming response
+            StringBuilder contentBuilder = new();
+            string id = null;
+            string model = null;
+            var buffer = new StringBuilder(); // Buffer for partial responses
+            var fullOutput = new StringBuilder(); // Buffer for accumulating the full response
+            Console.WriteLine("---");
+
+            await foreach (StreamingChatCompletionsUpdate partialResponse in response)
+            {
+
+                //Console.WriteLine($"ID: {chatUpdate.Id}");
+                //Console.WriteLine($"Created: {chatUpdate.Created}");
+                //Console.WriteLine($"Model: {chatUpdate.Model}");
+                //Console.WriteLine($"ContentUpdate: {partialResponse.ContentUpdate}");
+                buffer.Append(partialResponse.ContentUpdate);
+                fullOutput.Append(partialResponse.ContentUpdate); // Accumulate the full response
+                                                                  // Check if the buffer contains a complete sentence
+                string currentText = buffer.ToString();
+                int lastSentenceEnd = currentText.LastIndexOfAny(new[] { '.', '!', '?' });
+
+                if (lastSentenceEnd >= 0)
+                {
+                    // Extract the complete sentence(s)
+                    string completeSentences = currentText.Substring(0, lastSentenceEnd + 1);
+
+                    // Print the complete sentence(s)
+                    Console.Write(completeSentences);
+
+                    // Remove the printed sentences from the buffer
+                    buffer.Remove(0, lastSentenceEnd + 1);
+                }
+            }
+            Console.WriteLine("---");
+            Console.WriteLine($"fullOutput: {fullOutput}");
+            Console.WriteLine("---");
+
+
+        }
+        catch (RequestFailedException ex)
+        {
+            if (ex.Status == 422)
+            {
+                Console.WriteLine($"Looks like the model doesn't support a parameter: {ex.Message}");
+            }
+            else
+            {
+                Console.WriteLine($"Request failed: {ex.Message}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error: {ex.Message}");
+        }
+    }
+
+    public async Task HandlePhi35MoEInstructStreamingCommandAsyncs()
+    {
+        string endpoint = GetEnvironmentVariable("PHI_ENDPOINT");
+        string apiKey = GetEnvironmentVariable("PHI_KEY");
+        string modelId = "phi-3-5-moe-instruct";
+
+        // Initialize the custom tokenizer (e.g., for GPT-4)
+        var tokenizer = TiktokenTokenizer.CreateForModel("gpt-4");
+
+        // Kernel builder setup
+        var kernelBuilder = Kernel.CreateBuilder();
+        kernelBuilder.AddAzureAIInferenceChatCompletion(
+            endpoint: new Uri(endpoint),
+            apiKey: apiKey,
+            modelId: modelId
+        );
+
+        var kernel = kernelBuilder.Build();
+
+        // Define the prompt template for general chat
+        var promptyTemplate = _promptyTemplate;
+
+        // Chat settings
+        double temperature = 0.1;
+        double topP = 0.1;
+        int maxTokens = 4028;
+        int seed = 356;
+
+        var executionSettings = new AzureOpenAIPromptExecutionSettings
+        {
+            Temperature = temperature,
+            PresencePenalty = temperature,
+            FrequencyPenalty = temperature,
+            TopP = topP,
+            MaxTokens = maxTokens,
+            Seed = seed
+        };
+
+        Console.WriteLine("General Chat Assistant. Type 'exit' to quit.");
+        while (true)
+        {
+            Console.Write("Q: ");
+            var userInput = Console.ReadLine();
+            if (string.IsNullOrEmpty(userInput) || userInput.ToLower() == "exit")
+            {
+                break;
+            }
+
+            // Calculate token count for the input using the custom tokenizer
+            int inputTokenCount = tokenizer.CountTokens(userInput);
+            Console.WriteLine($"CustomTokenizer: InputTokenCount: {inputTokenCount}");
+
+            // Set arguments for execution
+            var arguments = new KernelArguments(executionSettings)
+            {
+                //["input"] = userInput
+            };
+
+            var buffer = new StringBuilder(); // Buffer for partial responses
+            var fullOutput = new StringBuilder(); // Buffer for accumulating the full response
+
+            try
+            {
+                Console.Write("Phi3: ");
+                //var paragraphWritingFunction = kernel.CreateFunctionFromPrompt(FunctionDefinition);
+                var paragraphWritingFunction = new Kernel().CreateFunctionFromPrompty(promptyTemplate);
+
+                // Streaming response from the AI model
+                await foreach (var partialResponse in paragraphWritingFunction.InvokeStreamingAsync(kernel, arguments))
+                {
+                    buffer.Append(partialResponse);
+                    fullOutput.Append(partialResponse); // Accumulate the full response
+
+                    // Check if the buffer contains a complete sentence
+                    string currentText = buffer.ToString();
+                    int lastSentenceEnd = currentText.LastIndexOfAny(new[] { '.', '!', '?' });
+
+                    if (lastSentenceEnd >= 0)
+                    {
+                        // Extract the complete sentence(s)
+                        string completeSentences = currentText.Substring(0, lastSentenceEnd + 1);
+
+                        // Print the complete sentence(s)
+                        Console.Write(completeSentences);
+
+                        // Remove the printed sentences from the buffer
+                        buffer.Remove(0, lastSentenceEnd + 1);
+                    }
+                }
+
+                Console.WriteLine(); // Add a new line after completing the streaming response
+
+                // Calculate the output token count using the full accumulated response
+                int outputTokenCount = tokenizer.CountTokens(fullOutput.ToString());
+
+                // Print the final token counts
+                Console.WriteLine($"CustomTokenizer: OutputTokenCount: {outputTokenCount}");
+                Console.WriteLine($"CustomTokenizer: TotalTokenCount: {inputTokenCount + outputTokenCount}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error: {ex.Message}");
+            }
+        }
+    }
+
+ 
     static string GetEnvironmentVariable(string variableName)
     {
         return Environment.GetEnvironmentVariable(variableName)

@@ -92,18 +92,18 @@ Knowledge base context is provided below:
     /// Creates a kernel builder with the necessary configurations.
     /// </summary>
     /// <returns>An instance of IKernelBuilder.</returns>
-    public IKernelBuilder CreateKernelBuilder()
+    public IKernelBuilder CreateKernelBuilder(string modelId)
     {
         IKernelBuilder kernelBuilder = Kernel.CreateBuilder();
 
-        string deploymentName = "gpt-4o-mini";
+        string deploymentName = modelId;
         string endpoint = GetEnvironmentVariable("AZURE_OPENAI_ENDPOINT");
         string apiKey = GetEnvironmentVariable("AZURE_OPENAI_KEY");
 
 
         int embeddingsdDimensions = 3072;
 
-        string modelId = "gpt-4o-mini";
+        //string modelId = "gpt-4o-mini";
 
         // Create HttpClient with custom headers and timeout
         var httpClient = new HttpClient();
@@ -154,7 +154,7 @@ Knowledge base context is provided below:
                 // _logger.LogInformation("Input cannot be null or empty.");
                 return ("Invalid input.", 0);
             }
-            IKernelBuilder kernelBuilder = CreateKernelBuilder();
+            IKernelBuilder kernelBuilder = CreateKernelBuilder("gpt-4o");
             //kernelBuilder.Plugins.AddFromType<TimeInformation>();
             Kernel kernel = kernelBuilder.Build();
 
