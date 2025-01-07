@@ -951,27 +951,6 @@ public class CosmosDbServiceWorking
 
         return kernelBuilder;
     }
-    public IKernelBuilder CreateKernelBuilderCohere(string modelId)
-    {
-        string endpoint = GetEnvironmentVariable("COHERE_ENDPOINT");
-
-        string apiKey = GetEnvironmentVariable("COHERE_KEY");
-
-        //string modelId = "phi-3-5-moe-instruct";
-        // Create HttpClient with custom headers and timeout
-        var httpClient = new HttpClient();
-        //httpClient.DefaultRequestHeaders.Add("My-Custom-Header", "My Custom Value");
-        httpClient.Timeout = TimeSpan.FromSeconds(300);  // Set NetworkTimeout to 30 seconds
-
-        IKernelBuilder kernelBuilder = Kernel.CreateBuilder()
-        .AddAzureAIInferenceChatCompletion(
-            endpoint: new Uri(endpoint),
-            apiKey: apiKey,
-            modelId: modelId,
-            httpClient: httpClient);
-        return kernelBuilder;
-    }
-
     // Define promptyTemplate as a global variable
     private readonly string _promptyTemplate = @"""
 ---
