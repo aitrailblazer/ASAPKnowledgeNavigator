@@ -34,7 +34,7 @@ using System;
 using Azure.AI.Inference;
 using Azure.Core;
 using System.Text.Json;
-
+using Newtonsoft.Json;
 class Program
 {
 
@@ -1019,7 +1019,7 @@ The output should be maximum of {{maxTokens}}. Try to fit it all in. Don't cut
 
 
     """;
-    public async Task HandleCohereCommandRAsync()
+    public async Task HandleCohereCommandRAsync1()
     {
         // Step 1: Initialize the client with endpoint and API key
         var client = new ChatCompletionsClient(
@@ -1034,7 +1034,7 @@ The output should be maximum of {{maxTokens}}. Try to fit it all in. Don't cut
             Console.WriteLine($"Model name: {modelInfo.Value.ModelName}");
             Console.WriteLine($"Model type: {modelInfo.Value.ModelType}");
             Console.WriteLine($"Model provider name: {modelInfo.Value.ModelProviderName}");
-            string userInput = "How many languages are in the world?";
+            string userInput = "Hello";
             var promptyTemplate = _promptyTemplate;
             Console.WriteLine($"promptyTemplate ----- : {promptyTemplate}");
             Console.WriteLine($"promptyTemplate ----- :");
@@ -1046,6 +1046,8 @@ The output should be maximum of {{maxTokens}}. Try to fit it all in. Don't cut
                 new ChatRequestSystemMessage(promptyTemplate),
                 new ChatRequestUserMessage(userInput)
             };
+            Console.WriteLine($"GenerateWithCohereAsync: input: {userInput}");
+
             try
             {
                 // Construct requestOptions using the separate Messages list
@@ -1057,16 +1059,13 @@ The output should be maximum of {{maxTokens}}. Try to fit it all in. Don't cut
                     //ResponseFormat = new ChatCompletionsResponseFormatJSON()
                 };
 
-                var options = new JsonSerializerOptions
-                {
-                    WriteIndented = true
-                };
-                var jsonmessages = JsonSerializer.Serialize(messages, options);
+                string jsonmessages = Newtonsoft.Json.JsonConvert.SerializeObject(messages, Newtonsoft.Json.Formatting.Indented);
+
                 Console.WriteLine($"jsonmessages:\n{jsonmessages}");
                 // Step 4: Send chat completion request
                 Console.WriteLine("Sending chat completion request...");
                 Azure.Response<ChatCompletions> response = await client.CompleteAsync(requestOptions);
-                jsonmessages = JsonSerializer.Serialize(response, options);
+                jsonmessages = Newtonsoft.Json.JsonConvert.SerializeObject(response, Newtonsoft.Json.Formatting.Indented);
                 Console.WriteLine($"jsonmessages response: {jsonmessages}");
 
                 System.Console.WriteLine(response.Value.Content);
@@ -1098,6 +1097,117 @@ The output should be maximum of {{maxTokens}}. Try to fit it all in. Don't cut
         catch (Exception ex)
         {
             Console.WriteLine($"Error: {ex.Message}");
+        }
+    }
+    public async Task HandleCohereCommandRAsync()
+    {
+        /*
+string system_message = @"## Task and Context
+----> TELL THE MODEL WHO IT IS AND WHAT IT DOES <----
+## Style Guide
+----> ADD INSTRUCTIONS FOR STYLISTIC CHOICES THE MODEL SHOULD MAKE <----";
+        */
+        // Initial system message
+        string system_message = @"## Task and Context 
+            You are a writing assistant
+            ## Style Guide";
+
+        // Adding the style guide
+        string style_guide = @"
+## Style Guide
+Please follow these guidelines to ensure high-quality output:
+
+1. Use **US spelling** consistently throughout the text.
+2. Maintain a professional and concise tone.
+3. Structure content clearly using appropriate headings, bullet points, and numbering.
+4. Ensure grammar, punctuation, and spelling are accurate.
+5. Incorporate creativity by writing in **sonnets** where appropriate, while retaining professionalism.
+6. Avoid jargon unless explicitly required or beneficial for the audience.";
+
+
+        // Append the style guide to the system message
+        system_message += style_guide;
+        system_message = system_message.Replace("\r\n", " ").Replace("\n", " ");
+
+        // Initialize HttpClientHandler with custom certificate validation
+        using (var handler = new HttpClientHandler
+        {
+            ClientCertificateOptions = ClientCertificateOption.Manual,
+            ServerCertificateCustomValidationCallback = (httpRequestMessage, cert, cetChain, policyErrors) => true
+        })
+
+        using (var client = new HttpClient(handler))
+        {
+            try
+            {
+                // Construct request body using a JSON object for better readability and validation
+                string requestBody = @"
+                {
+                'messages': [
+                    {
+                    'role': 'system',
+                    'content': '{system_message}'
+                    },
+                    {
+                    'role': 'user', 
+                    'content': 'Write a title for a blog post about API design. Only output the title text'
+                    }
+                ],
+                'max_tokens': 2048,
+                'temperature': 0.8,
+                'top_p': 0.1,
+                'frequency_penalty': 0,
+                'presence_penalty': 0,
+                'seed': 369
+                }"
+                  .Replace("'", "\"") // Replace single quotes with double quotes for valid JSON
+                  .Replace("{system_message}", system_message); // Replace the placeholder with the actual value
+
+
+                Console.WriteLine($"Request Body: {requestBody}");
+
+
+                // Retrieve API key and endpoint from environment variables
+                string apiKey = Environment.GetEnvironmentVariable("COHERE_KEY");
+                string apiEndpoint = Environment.GetEnvironmentVariable("COHERE_ENDPOINT");
+                if (string.IsNullOrEmpty(apiKey) || string.IsNullOrEmpty(apiEndpoint))
+                {
+                    throw new InvalidOperationException("API key or endpoint is not configured.");
+                }
+
+                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
+                client.BaseAddress = new Uri(apiEndpoint);
+
+                // Set up the request content
+                var content = new StringContent(requestBody, Encoding.UTF8, "application/json");
+
+                // Send POST request
+                HttpResponseMessage response = await client.PostAsync("/chat/completions", content).ConfigureAwait(false);
+                if (response.IsSuccessStatusCode)
+                {
+                    string result = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+                    // Deserialize and pretty print JSON
+                    var formattedJson = JsonConvert.SerializeObject(JsonConvert.DeserializeObject(result), Formatting.Indented);
+                    Console.WriteLine("Result (Formatted JSON):");
+                    Console.WriteLine(formattedJson);
+                }
+                else
+                {
+                    Console.WriteLine($"The request failed with status code: {response.StatusCode}");
+                    Console.WriteLine("Response Headers:");
+                    Console.WriteLine(response.Headers);
+
+                    string responseContent = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+                    var formattedErrorJson = JsonConvert.SerializeObject(JsonConvert.DeserializeObject(responseContent), Formatting.Indented);
+                    Console.WriteLine($"Error Details (Formatted JSON):");
+                    Console.WriteLine(formattedErrorJson);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"An error occurred: {ex.Message}");
+                // Optionally log the exception or handle it further
+            }
         }
     }
     public async Task HandleCohereCommandRStreamingAsync()
