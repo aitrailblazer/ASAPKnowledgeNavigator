@@ -1110,13 +1110,10 @@ string system_message = @"## Task and Context
         // Initial system message
         string system_message = @"## Task and Context 
             You are a writing assistant
-            ## Style Guide";
-
-        // Adding the style guide
-        string style_guide = @"
-## Style Guide
+            ## Style Guide
 Please follow these guidelines to ensure high-quality output:
 
+## Style Guide
 1. Use **US spelling** consistently throughout the text.
 2. Maintain a professional and concise tone.
 3. Structure content clearly using appropriate headings, bullet points, and numbering.
@@ -1124,10 +1121,12 @@ Please follow these guidelines to ensure high-quality output:
 5. Incorporate creativity by writing in **sonnets** where appropriate, while retaining professionalism.
 6. Avoid jargon unless explicitly required or beneficial for the audience.";
 
-
+        string input = @"## Input Text
+Write a title for a blog post about API design. Only output the title text";
         // Append the style guide to the system message
-        system_message += style_guide;
+        //system_message += style_guide;
         system_message = system_message.Replace("\r\n", " ").Replace("\n", " ");
+        input = input.Replace("\r\n", " ").Replace("\n", " ");
 
         // Initialize HttpClientHandler with custom certificate validation
         using (var handler = new HttpClientHandler
@@ -1150,7 +1149,7 @@ Please follow these guidelines to ensure high-quality output:
                     },
                     {
                     'role': 'user', 
-                    'content': 'Write a title for a blog post about API design. Only output the title text'
+                    'content': '{input}'
                     }
                 ],
                 'max_tokens': 2048,
@@ -1161,7 +1160,8 @@ Please follow these guidelines to ensure high-quality output:
                 'seed': 369
                 }"
                   .Replace("'", "\"") // Replace single quotes with double quotes for valid JSON
-                  .Replace("{system_message}", system_message); // Replace the placeholder with the actual value
+                  .Replace("{system_message}", system_message)
+                  .Replace("{input}", input); // Replace the placeholder with the actual value
 
 
                 Console.WriteLine($"Request Body: {requestBody}");
