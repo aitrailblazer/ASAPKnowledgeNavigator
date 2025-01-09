@@ -28,3 +28,18 @@ ASAP SEC-RAG-Navigator is a cutting-edge tool that leverages Retrieval-Augmented
 
 **Unique Selling Proposition:**
 ASAP SEC-RAG-Navigator goes beyond basic data aggregation by using AI to transform SEC documents into clear, actionable insights, setting a new standard for financial data analysis.
+
+Q/A:
+
+dotnet run knowledge-base-search "what is the total revenue for 2023?"
+
+dotnet run knowledge-base-search "what was the change in total revenue from 2022 to 2023?"
+
+dotnet run knowledge-base-search "list the revenue you had for each division for 2023"
+
+
+dotnet run knowledge-base-search "what was the change in total revenue from 2022 to 2023 for each division?"
+
+dotnet run knowledge-base-search "What was the operating margin in 2023?"
+
+dotnet run knowledge-base-search "how many employees do you have?"

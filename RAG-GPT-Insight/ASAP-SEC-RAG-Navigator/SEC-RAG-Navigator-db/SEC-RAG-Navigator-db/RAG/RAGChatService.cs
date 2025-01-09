@@ -60,7 +60,7 @@ public class RAGChatService<TKey>(
 
         return Task.CompletedTask;
     }
-     /// <summary>
+    /// <summary>
     /// Stop the service.
     /// </summary>
     /// <param name="cancellationToken">The <see cref="CancellationToken"/> to monitor for cancellation requests.</param>
@@ -261,6 +261,38 @@ public class RAGChatService<TKey>(
             Console.WriteLine($"Error processing file {filePath}: {fileException}");
         }
     }
+    public async Task DeletePdfAsync(
+        string tenantID,
+        string userID,
+        string fileNamePrefix,
+        string categoryId)
+    {
+        Console.WriteLine($"Starting deletion process for PDF items with prefix: {fileNamePrefix}");
+
+        try
+        {
+            // Call the DataLoader service to delete items based on the fileNamePrefix
+            int batchSize = 10; // Adjust batch size for deletion as needed
+            int betweenBatchDelayInMilliseconds = 1000; // Delay between batches to avoid throttling
+
+            await dataLoader.DeletePdf(
+                tenantID,
+                userID,
+                fileNamePrefix,
+                categoryId,
+                batchSize,
+                betweenBatchDelayInMilliseconds
+            ).ConfigureAwait(false);
+
+            Console.WriteLine($"Successfully completed deletion for items with prefix: {fileNamePrefix}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error during deletion for items with prefix {fileNamePrefix}: {ex.Message}");
+            throw;
+        }
+    }
+
     /// <summary>
     /// Process a single PDF file and load its content into the vector store.
     /// </summary>

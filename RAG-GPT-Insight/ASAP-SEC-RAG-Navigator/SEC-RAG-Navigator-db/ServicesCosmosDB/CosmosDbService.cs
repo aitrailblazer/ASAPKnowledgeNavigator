@@ -136,6 +136,170 @@ public class CosmosDbService
             throw;
         }
     }
+    public async Task BulkUpsertKnowledgeBaseItemsAsync(
+        string tenantId,
+        string userId,
+        string categoryId,
+        IEnumerable<KnowledgeBaseItem> knowledgeBaseItems,
+        int batchSize = 100, // Default batch size
+        int betweenBatchDelayInMs = 100, // Delay between batches to avoid throttling
+        CancellationToken cancellationToken = default)
+    {
+        _logger.LogInformation("Bulk upserting knowledge base items in category: {Category}", categoryId);
+
+        // Generate a partition key using the category as the primary identifier
+        PartitionKey partitionKey = new PartitionKeyBuilder()
+            .Add(tenantId)
+            .Add(userId)
+            .Add(categoryId)
+            .Build();
+
+        // Chunk the items into batches
+        var batches = knowledgeBaseItems.Chunk(batchSize);
+        int batchCounter = 1;
+
+        foreach (var batch in batches)
+        {
+            _logger.LogInformation("Processing batch {BatchNumber} with {ItemCount} items.", batchCounter, batch.Count());
+
+            var tasks = new List<Task>();
+
+            foreach (var item in batch)
+            {
+                tasks.Add(UpsertItemWithRetryAsync(item, partitionKey, categoryId, cancellationToken));
+            }
+
+            try
+            {
+                // Execute all upsert tasks in parallel
+                await Task.WhenAll(tasks).ConfigureAwait(false);
+                _logger.LogInformation("Successfully upserted batch {BatchNumber}.", batchCounter);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error during batch {BatchNumber} upserts.", batchCounter);
+            }
+
+            // Delay between batches to avoid throttling
+            _logger.LogInformation("Waiting for {Delay} ms before next batch.", betweenBatchDelayInMs);
+            await Task.Delay(betweenBatchDelayInMs, cancellationToken).ConfigureAwait(false);
+
+            batchCounter++;
+        }
+
+        _logger.LogInformation("Completed bulk upserting of all items in category: {Category}", categoryId);
+    }
+
+    private async Task UpsertItemWithRetryAsync(
+        KnowledgeBaseItem item,
+        PartitionKey partitionKey,
+        string categoryId,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            // Upsert the knowledge base item into the specified container
+            ItemResponse<KnowledgeBaseItem> response = await _knowledgeBaseContainer.UpsertItemAsync(
+                item: item,
+                partitionKey: partitionKey,
+                cancellationToken: cancellationToken
+            ).ConfigureAwait(false);
+
+            _logger.LogInformation("Upserted KnowledgeBaseItem: {KnowledgeBaseItemId} (Title: {Title}) in category: {Category}.",
+                response.Resource.Id, response.Resource.Title, categoryId);
+        }
+        catch (CosmosException ex)
+        {
+            _logger.LogError(ex, "Cosmos DB exception while upserting item {KnowledgeBaseItemId} in category: {Category}.", item.Id, categoryId);
+            throw;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Unexpected error while upserting item {KnowledgeBaseItemId} in category: {Category}.", item.Id, categoryId);
+            throw;
+        }
+    }
+    public async Task DeleteItemsByIdPrefixAsync(
+        string idPrefix,
+        string tenantId,
+        string userId,
+        string categoryId,
+        int batchSize = 100,
+        int betweenBatchDelayInMs = 100)
+    {
+        _logger.LogInformation("Starting deletion of items with ID prefix: {IdPrefix}", idPrefix);
+
+        // Create a SQL query to find items with the specified prefix
+        var query = new QueryDefinition("SELECT c.id FROM c WHERE STARTSWITH(c.id, @idPrefix)")
+            .WithParameter("@idPrefix", idPrefix);
+
+        var partitionKey = new PartitionKeyBuilder()
+            .Add(tenantId)
+            .Add(userId)
+            .Add(categoryId)
+            .Build();
+
+        var itemsToDelete = new List<string>();
+        using var iterator = _knowledgeBaseContainer.GetItemQueryIterator<dynamic>(query, requestOptions: new QueryRequestOptions
+        {
+            PartitionKey = partitionKey
+        });
+        CancellationToken cancellationToken = default;
+        while (iterator.HasMoreResults)
+        {
+            var response = await iterator.ReadNextAsync(cancellationToken);
+            foreach (var item in response)
+            {
+                itemsToDelete.Add(item.id.ToString());
+            }
+        }
+
+        _logger.LogInformation("Found {ItemCount} items to delete.", itemsToDelete.Count);
+
+        // Delete items in batches
+        var batches = itemsToDelete.Chunk(batchSize);
+        int batchCounter = 1;
+
+        foreach (var batch in batches)
+        {
+            var tasks = batch.Select(id => DeleteItemByIdAsync(id, partitionKey, cancellationToken)).ToList();
+
+            try
+            {
+                await Task.WhenAll(tasks);
+                _logger.LogInformation("Successfully deleted batch {BatchNumber}.", batchCounter);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error during batch {BatchNumber} deletion.", batchCounter);
+            }
+
+            // Delay between batches to avoid throttling
+            _logger.LogInformation("Waiting for {Delay} ms before next batch.", betweenBatchDelayInMs);
+            await Task.Delay(betweenBatchDelayInMs, cancellationToken);
+
+            batchCounter++;
+        }
+
+        _logger.LogInformation("Completed deletion of items with ID prefix: {IdPrefix}.", idPrefix);
+    }
+
+    private async Task DeleteItemByIdAsync(string id, PartitionKey partitionKey, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await _knowledgeBaseContainer.DeleteItemAsync<dynamic>(id, partitionKey, cancellationToken: cancellationToken);
+            _logger.LogInformation("Deleted item with ID: {Id}.", id);
+        }
+        catch (CosmosException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
+        {
+            _logger.LogWarning("Item with ID: {Id} not found during deletion.", id);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error deleting item with ID: {Id}.", id);
+        }
+    }
 
     /// <summary>
     /// Searches the knowledge base for items matching the provided criteria.

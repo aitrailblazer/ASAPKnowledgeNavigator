@@ -13,6 +13,7 @@
   <ItemGroup>
     <PackageReference Include="Azure.AI.Inference" Version="1.0.0-beta.2" />
     <PackageReference Include="Azure.AI.OpenAI" Version="2.1.0-beta.2" />
+    <PackageReference Include="BlingFireNuget" Version="0.1.8" />
     <PackageReference Include="Microsoft.ML.Tokenizers.Data.Cl100kBase" Version="1.0.0" />
 
     <PackageReference Include="Azure.Identity" Version="1.13.1" />

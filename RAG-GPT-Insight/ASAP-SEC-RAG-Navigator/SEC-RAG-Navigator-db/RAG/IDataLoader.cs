@@ -18,14 +18,22 @@ public interface IDataLoader
     /// <param name="userID">The user ID to associate with the records.</param>
     /// <returns>An async task that completes when the loading is complete.</returns>
     Task LoadPdf(
-        string tenantID, 
-        string userID, 
+        string tenantID,
+        string userID,
         string fileName,
         string directory,
-        string blobName, 
+        string blobName,
         string memoryKey,
-        Stream fileStream, 
-        int batchSize, 
-        int betweenBatchDelayInMs, 
+        Stream fileStream,
+        int batchSize,
+        int betweenBatchDelayInMs,
         CancellationToken cancellationToken);
+
+    Task DeletePdf(
+          string tenantId,
+          string userId,
+          string fileNamePrefix,
+          string categoryId,
+          int batchSize,
+          int betweenBatchDelayInMs);
 }

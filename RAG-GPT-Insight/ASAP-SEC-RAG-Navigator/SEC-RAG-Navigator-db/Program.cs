@@ -35,6 +35,7 @@ using Azure.AI.Inference;
 using Azure.Core;
 using System.Text.Json;
 using Newtonsoft.Json;
+using BlingFire;
 class Program
 {
 
@@ -72,6 +73,7 @@ class Program
         Console.WriteLine("  SEC-RAG-Navigator create-container <containerName>");
         Console.WriteLine("  SEC-RAG-Navigator list-containers");
         Console.WriteLine("  SEC-RAG-Navigator rag-chat-service");
+        Console.WriteLine("  SEC-RAG-Navigator rag-chat-service-delete");
         Console.WriteLine("  SEC-RAG-Navigator knowledge-base-search \"<promptText>\"");
         Console.WriteLine("  SEC-RAG-Navigator phi-3.5-moe-instruct");
         Console.WriteLine("  SEC-RAG-Navigator phi-3.5-moe-instruct-streaming");
@@ -343,6 +345,12 @@ public class SEC_RAG_NavigatorService
                 string userID = "5678";
                 await _cosmosDbServiceWorking.HandleInputFileFromPath(tenantID, userID);
             }
+            else if (command == "rag-chat-service-delete")
+            {
+                string tenantID = "1234";
+                string userID = "5678";
+                await _cosmosDbServiceWorking.DeleteRag(tenantID, userID);
+            }
             else if (command == "knowledge-base-search" && args.Length >= 2)
             {
                 // Retrieve the prompt text (e.g., "Risk factors")
@@ -399,6 +407,7 @@ public class SEC_RAG_NavigatorService
         Console.WriteLine("  SEC-RAG-Navigator create-container <containerName>");
         Console.WriteLine("  SEC-RAG-Navigator list-containers");
         Console.WriteLine("  SEC-RAG-Navigator rag-chat-service");
+        Console.WriteLine("  SEC-RAG-Navigator rag-chat-service-delete");
         Console.WriteLine("  SEC-RAG-Navigator knowledge-base-search \"<promptText>\"");
         Console.WriteLine("  SEC-RAG-Navigator phi-3.5-moe-instruct");
         Console.WriteLine("  SEC-RAG-Navigator phi-3.5-moe-instruct-streaming");
@@ -591,6 +600,46 @@ public class CosmosDbServiceWorking
         }
 
         return $"Successfully processed file: {fileName}";
+    }
+
+
+    public async Task<string> DeleteRag(
+         string tenantID,
+         string userID)
+    {
+
+        // Generate a memoryKey based on tenantID, userID, and fileName
+        var fileName = "tsla-20231231.htm.html.pdf";
+
+        //"id": "1234-5678-tsla-20231231.htm.html.pdf-page133-133-20-D5",
+
+        var memoryKey = $"{tenantID}-{userID}-{fileName}";
+
+        var categoryId = "Document";
+        try
+        {
+            // Call ProcessPdfAsync directly
+            Console.WriteLine($"Calling ProcessPdfAsync for {fileName}");
+            await _ragChatService.DeletePdfAsync(
+                tenantID,
+                userID,
+                memoryKey,
+                categoryId);
+
+            Console.WriteLine("DeletePdfAsync completed successfully");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error in DeleteRag: {ex}");
+            throw;
+        }
+        finally
+        {
+
+            Console.WriteLine($"DeleteRag completed");
+        }
+
+        return $"Successfully DeleteRag file: {fileName}";
     }
 
     /// <summary>
