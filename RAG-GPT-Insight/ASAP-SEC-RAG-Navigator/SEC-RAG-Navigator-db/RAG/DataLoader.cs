@@ -7,10 +7,16 @@ using Microsoft.SemanticKernel.ChatCompletion;
 using Microsoft.SemanticKernel.Embeddings;
 using Microsoft.Extensions.Logging;
 using Microsoft.Azure.Cosmos;
+using System.Net.Http.Headers;
 using System.Diagnostics;
 using BlingFire;
 using PartitionKey = Microsoft.Azure.Cosmos.PartitionKey;
 using Cosmos.Copilot.Models;
+using System.Net.Http;
+using System.Net.Http.Json;
+using System.Text; // For Encoding
+using Newtonsoft.Json; // For JsonConvert and Formatting
+using System.Linq;
 
 using UglyToad.PdfPig;
 using UglyToad.PdfPig.Content;
@@ -83,6 +89,12 @@ public class DataLoader<TKey>(
                         _logger.LogWarning("Skipped empty content for page {PageNumber}.", content.PageNumber);
                         continue;
                     }
+                    // Generate a unique key for the KnowledgeBaseItem.
+                    string destination = $"{tenantId}/{userId}/{directory}/{blobName}/{fileName}";
+                    string categoryId = "Document";
+                    string apiKey = Environment.GetEnvironmentVariable("COHERE_EMBED_KEY");
+                    string apiEndpoint = Environment.GetEnvironmentVariable("COHERE_EMBED_ENDPOINT");
+
                     if (true)
                     {
                         var allsentences = BlingFireUtils.GetSentences(content.Text);
@@ -91,13 +103,12 @@ public class DataLoader<TKey>(
                         foreach (var sentence in allsentences)
                         {
                             //Console.WriteLine($"-->  sentence {++i} saved: {sentence}");
-
-                            // Generate a unique key for the KnowledgeBaseItem.
                             string uniqueKey = $"{memoryKey}-page{content.PageNumber}-{counterBatchContent}-{i}-D5";
-                            string destination = $"{tenantId}/{userId}/{directory}/{blobName}/{fileName}";
-                            string categoryId = "Document";
-                            var vectors = (await GenerateEmbeddingsWithRetryAsync(
-                                textEmbeddingGenerationService,
+                            _logger.LogInformation($"uniqueKey: {uniqueKey}");
+
+                            var vectors = (await GenerateEmbeddingsCohereWithRetryAsync(
+                                apiKey,
+                                apiEndpoint,
                                 sentence,//content.Text!,
                                 cancellationToken: cancellationToken).ConfigureAwait(false)).ToArray();
 
@@ -158,19 +169,25 @@ public class DataLoader<TKey>(
         CancellationToken cancellationToken)
     {
         var stopwatch = Stopwatch.StartNew();
-        _logger.LogInformation("Starting PDF loading process for file: {FileName}", fileName);
+        var stopwatch2 = Stopwatch.StartNew();
 
+        _logger.LogInformation("Starting PDF loading process for file: {FileName}", fileName);
         // Ensure the vector store collection exists.
         await _vectorStoreRecordCollection.CreateCollectionIfNotExistsAsync(cancellationToken).ConfigureAwait(false);
 
+        var knowledgeBaseItems = new List<KnowledgeBaseItem>();
+
         // Extract sections from the PDF stream.
         var sections = LoadTextAndImagesFromStream(fileStream, cancellationToken);
-        var knowledgeBaseItems = new List<KnowledgeBaseItem>();
 
         foreach (var content in sections)
         {
+            var stopwatch1 = Stopwatch.StartNew();
+
             try
             {
+                _logger.LogInformation("Processing page {PageNumber}.", content.PageNumber);
+
                 if (content.Text == null && content.Image != null)
                 {
                     // Convert image to text.
@@ -197,10 +214,14 @@ public class DataLoader<TKey>(
                     string destination = $"{tenantId}/{userId}/{directory}/{blobName}/{fileName}";
                     string categoryId = "Document";
 
+                    string apiKey = Environment.GetEnvironmentVariable("COHERE_EMBED_KEY");
+                    string apiEndpoint = Environment.GetEnvironmentVariable("COHERE_EMBED_ENDPOINT");
+                    //_logger.LogInformation($"uniqueKey: {uniqueKey}");
+                    // 
                     var vectors = (await GenerateEmbeddingsWithRetryAsync(
                         textEmbeddingGenerationService,
-                        sentence,
-                        cancellationToken).ConfigureAwait(false)).ToArray();
+                        sentence,//content.Text!,
+                        cancellationToken: cancellationToken).ConfigureAwait(false)).ToArray();
 
                     var knowledgeBaseItem = new KnowledgeBaseItem(
                         uniqueKey,
@@ -217,12 +238,17 @@ public class DataLoader<TKey>(
                     knowledgeBaseItems.Add(knowledgeBaseItem);
                     sentenceCounter++;
                 }
+                stopwatch1.Stop();
+                _logger.LogInformation("Completed Processing of the page, {sentenceCounter} sentences: Time spent: {ElapsedMinutes} min {ElapsedSeconds} sec", sentenceCounter, stopwatch1.Elapsed.Minutes, stopwatch1.Elapsed.Seconds);
+
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error processing content for page {PageNumber}.", content.PageNumber);
             }
         }
+        stopwatch2.Stop();
+        _logger.LogInformation("Completed Processing of all pages: Time spent: {ElapsedMinutes} min {ElapsedSeconds} sec", stopwatch2.Elapsed.Minutes, stopwatch2.Elapsed.Seconds);
 
         // Perform bulk upserts
         _logger.LogInformation("Starting bulk upsert of KnowledgeBaseItems.");
@@ -239,7 +265,136 @@ public class DataLoader<TKey>(
         stopwatch.Stop();
         _logger.LogInformation("Completed PDF loading process for file: {FileName}. Time spent: {ElapsedMinutes} min {ElapsedSeconds} sec", fileName, stopwatch.Elapsed.Minutes, stopwatch.Elapsed.Seconds);
     }
+    public async Task LoadPdfCohere(
+        string tenantId,
+        string userId,
+        string fileName,
+        string directory,
+        string blobName,
+        string memoryKey,
+        Stream fileStream,
+        int batchSize,
+        int betweenBatchDelayInMs,
+        CancellationToken cancellationToken)
+    {
+        var stopwatch = Stopwatch.StartNew();
+        var stopwatch2 = Stopwatch.StartNew();
 
+        _logger.LogInformation("Starting PDF loading process for file: {FileName}", fileName);
+        // Ensure the vector store collection exists.
+        await _vectorStoreRecordCollection.CreateCollectionIfNotExistsAsync(cancellationToken).ConfigureAwait(false);
+
+        var knowledgeBaseItems = new List<KnowledgeBaseItem>();
+
+        // Extract sections from the PDF stream.
+        var sections = LoadTextAndImagesFromStream(fileStream, cancellationToken);
+
+        foreach (var content in sections)
+        {
+            var stopwatch1 = Stopwatch.StartNew();
+
+            try
+            {
+                _logger.LogInformation("Processing page {PageNumber}.", content.PageNumber);
+
+                if (content.Text == null && content.Image != null)
+                {
+                    // Convert image to text.
+                    content.Text = await ConvertImageToTextWithRetryAsync(
+                        chatCompletionService,
+                        content.Image.Value,
+                        cancellationToken
+                    ).ConfigureAwait(false);
+                }
+
+                if (string.IsNullOrWhiteSpace(content.Text))
+                {
+                    _logger.LogWarning("Skipped empty content for page {PageNumber}.", content.PageNumber);
+                    continue;
+                }
+
+                content.Text = SanitizeString(content.Text);
+                // Split content into sentences
+                var sentences = BlingFireUtils.GetSentences(content.Text).ToArray();
+
+
+                string apiKey = Environment.GetEnvironmentVariable("COHERE_EMBED_KEY");
+                string apiEndpoint = Environment.GetEnvironmentVariable("COHERE_EMBED_ENDPOINT");
+                _logger.LogInformation("GenerateArrayOfEmbeddingsCohereWithRetryAsync");
+
+                // Generate embeddings for all sentences in one request
+                var embeddings = await GenerateArrayOfEmbeddingsCohereWithRetryAsync(
+                    apiKey,
+                    apiEndpoint,
+                    sentences, // Array of sentences
+                    cancellationToken
+                );
+
+                // Create KnowledgeBaseItem for each sentence and embedding
+                for (int i = 0; i < sentences.Length; i++)
+                {
+                    string sentence = sentences[i];
+                    var vectors = embeddings[i].ToArray();
+
+                    string uniqueKey = $"{memoryKey}-page{content.PageNumber}-{i + 1}-D5";
+                    string destination = $"{tenantId}/{userId}/{directory}/{blobName}/{fileName}";
+                    string categoryId = "Document";
+
+                    var knowledgeBaseItem = new KnowledgeBaseItem(
+                        uniqueKey,
+                        tenantId: tenantId,
+                        userId: userId,
+                        categoryId: categoryId,
+                        title: $"Page {content.PageNumber}",
+                        content: sentence,
+                        referenceDescription: $"{fileName}#page={content.PageNumber}",
+                        referenceLink: $"{destination}#page={content.PageNumber}",
+                        vectors: vectors
+                    );
+
+                    knowledgeBaseItems.Add(knowledgeBaseItem);
+                }
+
+                stopwatch1.Stop();
+                _logger.LogInformation("Completed processing of page {PageNumber}, {SentenceCount} sentences. Time spent: {ElapsedMinutes} min {ElapsedSeconds} sec", content.PageNumber, sentences.Length, stopwatch1.Elapsed.Minutes, stopwatch1.Elapsed.Seconds);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error processing content for page {PageNumber}.", content.PageNumber);
+            }
+        }
+
+        stopwatch2.Stop();
+        _logger.LogInformation("Completed processing of all pages. Time spent: {ElapsedMinutes} min {ElapsedSeconds} sec", stopwatch2.Elapsed.Minutes, stopwatch2.Elapsed.Seconds);
+
+        // Perform bulk upserts
+        _logger.LogInformation("Starting bulk upsert of KnowledgeBaseItems.");
+        await _cosmosDbService.BulkTransactUpsertKnowledgeBaseItemsAsync( // BulkUpsertKnowledgeBaseItemsAsync //BulkTransactUpsertKnowledgeBaseItemsAsync
+            tenantId,
+            userId,
+            "Document", // Category ID
+            knowledgeBaseItems,
+            batchSize,
+            betweenBatchDelayInMs,
+            cancellationToken
+        );
+
+        stopwatch.Stop();
+        _logger.LogInformation("Completed PDF loading process for file: {FileName}. Time spent: {ElapsedMinutes} min {ElapsedSeconds} sec", fileName, stopwatch.Elapsed.Minutes, stopwatch.Elapsed.Seconds);
+    }
+    string SanitizeString(string input)
+    {
+        if (string.IsNullOrWhiteSpace(input))
+        {
+            return string.Empty;
+        }
+
+        // Remove control characters (Unicode category "Cc") and other invisible characters
+        return new string(input
+            .Where(c => !char.IsControl(c) && !char.IsWhiteSpace(c) || c == ' ') // Allow spaces but remove others
+            .ToArray())
+            .Trim(); // Remove leading and trailing whitespace
+    }
     /// <summary>
     /// Reads the text and images from each page in the provided PDF stream.
     /// </summary>
@@ -389,6 +544,255 @@ public class DataLoader<TKey>(
                 }
             }
         }
+    }
+    private static async Task<ReadOnlyMemory<float>> GenerateEmbeddingsCohereWithRetryAsync(
+        string apiKey,
+        string apiEndpoint,
+        string text,
+        CancellationToken cancellationToken)
+    {
+        const int maxRetries = 3; // Maximum number of retries
+        const int retryDelayMilliseconds = 10_000; // Delay between retries in milliseconds
+        int tries = 0;
+
+        // Initialize HttpClientHandler with custom certificate validation
+        using var handler = new HttpClientHandler
+        {
+            ClientCertificateOptions = ClientCertificateOption.Manual,
+            ServerCertificateCustomValidationCallback = (httpRequestMessage, cert, certChain, policyErrors) => true
+        };
+        using var client = new HttpClient(handler)
+        {
+            BaseAddress = new Uri(apiEndpoint)
+        };
+
+        // Configure HttpClient headers
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
+        client.DefaultRequestHeaders.Add("extra-parameters", "pass-through");
+
+        while (true)
+        {
+            try
+            {
+                // Prepare the embedding request payload
+                var requestBody = new
+                {
+                    input = new[] { text },
+                    model = "embed-english-v3.0", // Specify the embedding model
+                    embeddingTypes = new[] { "int8" }, // Use float32 for precise embeddings
+                    input_type = "document" // Specify input type as 'query' or 'document'
+                };
+
+                // Serialize the request body
+                string requestBodyJson = JsonConvert.SerializeObject(requestBody, Formatting.Indented);
+                //Console.WriteLine("Embedding Request Body:");
+                //Console.WriteLine(requestBodyJson);
+
+                // Send the request
+                var content = new StringContent(requestBodyJson, Encoding.UTF8, "application/json");
+                HttpResponseMessage response = await client.PostAsync("/embeddings", content, cancellationToken).ConfigureAwait(false);
+
+                // Handle response
+                if (response.IsSuccessStatusCode)
+                {
+                    string result = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+
+                    try
+                    {
+                        // Parse the response
+                        var parsedResult = JsonConvert.DeserializeObject<dynamic>(result);
+
+                        //Console.WriteLine(JsonConvert.SerializeObject(parsedResult, Formatting.Indented));
+
+                        if (parsedResult?.data != null && parsedResult.data.Count > 0)
+                        {
+                            // Extract the embedding
+                            var embeddingArray = parsedResult.data[0]?.embedding?.ToObject<List<float>>();
+                            //Console.WriteLine($"Embedding Length: {embeddingArray.Count}");
+                            // Return the embedding as ReadOnlyMemory<float>
+                            return new ReadOnlyMemory<float>(embeddingArray.ToArray());
+                            /*
+                            if (embeddingArray != null)
+                            {
+
+                                // Get the first 10 values manually
+                                var embeddingPreview = new List<float>();
+                                for (int i = 0; i < embeddingArray.Count && i < 1; i++)
+                                {
+                                    embeddingPreview.Add(embeddingArray[i]);
+                                }
+
+                                Console.WriteLine($"Embedding (First 1 Values): {string.Join(", ", embeddingPreview)}");
+                                Console.WriteLine($"Embedding Length: {embeddingArray.Count}");
+
+                                // Return the embedding as ReadOnlyMemory<float>
+                                return new ReadOnlyMemory<float>(embeddingArray.ToArray());
+                            }
+                            else
+                            {
+                                throw new InvalidOperationException("Embedding is null or could not be parsed.");
+                            }
+                            */
+                        }
+                        else
+                        {
+                            throw new InvalidOperationException("Response data is null or empty.");
+                        }
+                    }
+                    catch (JsonException jsonEx)
+                    {
+                        Console.WriteLine($"Error parsing JSON response: {jsonEx.Message}");
+                        throw;
+                    }
+                }
+                else
+                {
+                    Console.WriteLine($"Request failed with status code: {response.StatusCode}");
+                    string responseContent = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+                    Console.WriteLine($"Error Details: {responseContent}");
+                    throw new HttpRequestException($"Embedding request failed with status code {response.StatusCode}.");
+                }
+            }
+            catch (HttpRequestException ex) when (tries < maxRetries && ex.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
+            {
+                tries++;
+                Console.WriteLine($"Rate limit reached. Retrying ({tries}/{maxRetries}) in {retryDelayMilliseconds / 1000} seconds...");
+                await Task.Delay(retryDelayMilliseconds, cancellationToken).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"An error occurred: {ex.Message}");
+                throw;
+            }
+        }
+    }
+    private static async Task<List<ReadOnlyMemory<float>>> GenerateArrayOfEmbeddingsCohereWithRetryAsync(
+        string apiKey,
+        string apiEndpoint,
+        string[] textArray,
+        CancellationToken cancellationToken)
+    {
+        const int maxRetries = 3; // Maximum number of retries
+        const int retryDelayMilliseconds = 10_000; // Delay between retries in milliseconds
+        int tries = 0;
+
+        // Initialize HttpClientHandler with custom certificate validation
+        using var handler = new HttpClientHandler
+        {
+            ClientCertificateOptions = ClientCertificateOption.Manual,
+            ServerCertificateCustomValidationCallback = (httpRequestMessage, cert, certChain, policyErrors) => true
+        };
+        using var client = new HttpClient(handler)
+        {
+            BaseAddress = new Uri(apiEndpoint)
+        };
+
+        // Configure HttpClient headers
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
+        client.DefaultRequestHeaders.Add("extra-parameters", "pass-through");
+        /*
+        float32 
+        "vectors": [
+                -0.0008873939514160156,
+                -0.020050048828125,
+                -0.016845703125,
+                -0.058746337890625,
+                -0.0182952880859375,
+
+        int8
+           "embedding": [
+                -0.0016727448,
+                -0.016067505,
+                -0.0025558472,        
+        */
+        while (true)
+        {
+            try
+            {
+                // Prepare the embedding request payload
+                var requestBody = new
+                {
+                    input = textArray, // Array of strings
+                    model = "embed-english-v3.0", // Specify the embedding model
+                    embeddingTypes = new[] { "float32" }, // Use float32 int8 for precise embeddings
+                    input_type = "document" // Specify input type as 'query' or 'document'
+                };
+
+                // Serialize the request body
+                string requestBodyJson = JsonConvert.SerializeObject(requestBody, Formatting.Indented);
+                // Console.WriteLine("Embedding Request Body:");
+                // Console.WriteLine(requestBodyJson);
+
+                // Send the request
+                var content = new StringContent(requestBodyJson, Encoding.UTF8, "application/json");
+                HttpResponseMessage response = await client.PostAsync("/embeddings", content, cancellationToken).ConfigureAwait(false);
+
+                // Handle response
+                if (response.IsSuccessStatusCode)
+                {
+                    string result = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+
+                    try
+                    {
+                        // Parse the response
+                        var parsedResult = JsonConvert.DeserializeObject<dynamic>(result);
+
+                        if (parsedResult?.data != null && parsedResult.data.Count > 0)
+                        {
+                            var embeddings = new List<ReadOnlyMemory<float>>();
+
+                            // Extract embeddings for all inputs
+                            foreach (var item in parsedResult.data)
+                            {
+                                var embeddingArray = item?.embedding?.ToObject<List<float>>();
+                                if (embeddingArray != null)
+                                {
+                                    embeddings.Add(new ReadOnlyMemory<float>(embeddingArray.ToArray()));
+                                }
+                                else
+                                {
+                                    throw new InvalidOperationException("An embedding is null or could not be parsed.");
+                                }
+                            }
+
+                            return embeddings;
+                        }
+                        else
+                        {
+                            throw new InvalidOperationException("Response data is null or empty.");
+                        }
+                    }
+                    catch (JsonException jsonEx)
+                    {
+                        Console.WriteLine($"Error parsing JSON response: {jsonEx.Message}");
+                        throw;
+                    }
+                }
+                else
+                {
+                    Console.WriteLine($"Request failed with status code: {response.StatusCode}");
+                    string responseContent = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+                    Console.WriteLine($"Error Details: {responseContent}");
+                    throw new HttpRequestException($"Embedding request failed with status code {response.StatusCode}.");
+                }
+            }
+            catch (HttpRequestException ex) when (tries < maxRetries && ex.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
+            {
+                tries++;
+                Console.WriteLine($"Rate limit reached. Retrying ({tries}/{maxRetries}) in {retryDelayMilliseconds / 1000} seconds...");
+                await Task.Delay(retryDelayMilliseconds, cancellationToken).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"An error occurred: {ex.Message}");
+                throw;
+            }
+        }
+    }
+
+    public class CohereEmbeddingResponse
+    {
+        public float[][] Embeddings { get; set; }
     }
 
 

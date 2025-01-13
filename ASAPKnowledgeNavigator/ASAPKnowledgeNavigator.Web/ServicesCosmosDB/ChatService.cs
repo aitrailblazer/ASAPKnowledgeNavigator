@@ -120,6 +120,8 @@ public class ChatService
             throw;
         }
     }
+
+    
     public async Task<(string completion, string? title)> GetKnowledgeBaseStreamingCompletionAsync(
        string tenantId,
        string userId,

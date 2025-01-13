@@ -27,6 +27,7 @@
     <PackageReference Include="Microsoft.SemanticKernel.Connectors.AzureAIInference" Version="1.32.0-beta" />
     <PackageReference Include="Microsoft.SemanticKernel.Connectors.AzureCosmosDBNoSQL" Version="1.32.0-preview" />
     <PackageReference Include="Microsoft.SemanticKernel.Connectors.AzureOpenAI" Version="1.32.0" />
+    <PackageReference Include="Microsoft.SemanticKernel.Connectors.InMemory" Version="1.33.0-preview" />
     <PackageReference Include="Microsoft.SemanticKernel.Connectors.OpenAI" Version="1.32.0" />
     <PackageReference Include="Microsoft.SemanticKernel.PromptTemplates.Handlebars" Version="1.32.0" />
     <PackageReference Include="Microsoft.SemanticKernel.Prompty" Version="1.32.0-alpha" />

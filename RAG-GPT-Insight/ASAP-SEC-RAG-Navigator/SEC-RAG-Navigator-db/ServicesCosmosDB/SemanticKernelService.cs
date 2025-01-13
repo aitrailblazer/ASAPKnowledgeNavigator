@@ -27,9 +27,66 @@ using Microsoft.Extensions.Logging;
 /// </summary>
 public class SemanticKernelService
 {
-    //Semantic Kernel
-    readonly Kernel kernel;
+    // Class-level fields for the variables
+    private readonly string endpoint;
+    private readonly string endpointEmbedding;
+    private readonly string completionDeploymentName;
+    private readonly string embeddingDeploymentName;
+    private readonly string apiKey;
+    private readonly string apiKeyEmbedding;
+    private readonly int dimensions;
+    private readonly ILogger<SemanticKernelService> _logger;
 
+    // Semantic Kernel instance
+    private readonly Kernel kernel;
+
+
+    /// <summary>
+    /// Creates a new instance of the Semantic Kernel.
+    /// </summary>
+    /// <param name="endpoint">Endpoint URI.</param>
+    /// <param name="completionDeploymentName">Name of the deployed Azure OpenAI completion model.</param>
+    /// <param name="embeddingDeploymentName">Name of the deployed Azure OpenAI embedding model.</param>
+    /// <param name="apiKey">API key for authentication.</param>
+    /// <param name="dimensions">Dimensions for the embedding model.</param>
+    /// <param name="logger">Logger instance for logging.</param>
+    /// <exception cref="ArgumentNullException">Thrown when endpoint, key, or modelName is either null or empty.</exception>
+
+
+    public SemanticKernelService(
+        string endpoint,
+        string endpointEmbedding,
+        string completionDeploymentName,
+        string embeddingDeploymentName,
+        string apiKey,
+        string apiKeyEmbedding,
+        int dimensions,
+        ILogger<SemanticKernelService> logger) // Add logger parameter
+    {
+        // Initialize class-level fields
+        this.endpoint = endpoint ?? throw new ArgumentNullException(nameof(endpoint));
+        this.endpointEmbedding = endpointEmbedding ?? throw new ArgumentNullException(nameof(endpointEmbedding));
+        this.completionDeploymentName = completionDeploymentName ?? throw new ArgumentNullException(nameof(completionDeploymentName));
+        this.embeddingDeploymentName = embeddingDeploymentName ?? throw new ArgumentNullException(nameof(embeddingDeploymentName));
+        this.apiKey = apiKey ?? throw new ArgumentNullException(nameof(apiKey));
+        this.apiKeyEmbedding = apiKeyEmbedding ?? throw new ArgumentNullException(nameof(apiKeyEmbedding));
+        this.dimensions = dimensions;
+
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger)); // Initialize logger
+
+        // Initialize the kernel
+        kernel = Kernel.CreateBuilder()
+            .AddAzureOpenAIChatCompletion(
+                deploymentName: completionDeploymentName,
+                endpoint: endpoint,
+                apiKey: apiKey)
+            .AddAzureOpenAITextEmbeddingGeneration(
+                deploymentName: embeddingDeploymentName,
+                endpoint: endpointEmbedding,
+                apiKey: apiKeyEmbedding,
+                dimensions: dimensions)
+            .Build();
+    }
     /// <summary>
     /// System prompt to guide the model as a knowledge base assistant with specific context and formatting.
     /// </summary>
@@ -56,78 +113,39 @@ Knowledge base context is provided below:
         Summarize this text. One to three words maximum length. 
         Plain text only. No punctuation, markup or tags.";
 
+
     /// <summary>
-    /// Creates a new instance of the Semantic Kernel.
-    /// </summary>
-    /// <param name="endpoint">Endpoint URI.</param>
-    /// <param name="completionDeploymentName">Name of the deployed Azure OpenAI completion model.</param>
-    /// <param name="embeddingDeploymentName">Name of the deployed Azure OpenAI embedding model.</param>
-    /// <param name="apiKey">API key for authentication.</param>
-    /// <param name="dimensions">Dimensions for the embedding model.</param>
-    /// <param name="logger">Logger instance for logging.</param>
-    /// <exception cref="ArgumentNullException">Thrown when endpoint, key, or modelName is either null or empty.</exception>
-
-    private readonly ILogger<SemanticKernelService> _logger;
-
-    public SemanticKernelService(
-        string endpoint,
-        string completionDeploymentName,
-        string embeddingDeploymentName,
-        string apiKey,
-        int dimensions,
-        ILogger<SemanticKernelService> logger) // Add logger parameter
-    {
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger)); // Initialize logger
-
-        kernel = Kernel.CreateBuilder()
-            .AddAzureOpenAIChatCompletion(deploymentName: completionDeploymentName, endpoint: endpoint, apiKey: apiKey)
-            .AddAzureOpenAITextEmbeddingGeneration(
-                deploymentName: embeddingDeploymentName,
-                endpoint: endpoint,
-                apiKey: apiKey,
-                dimensions: dimensions)
-            .Build();
-    }
-    /// <summary>
-    /// Creates a kernel builder with the necessary configurations.
+    /// Creates a kernel builder using the pre-initialized settings from the constructor.
     /// </summary>
     /// <returns>An instance of IKernelBuilder.</returns>
     public IKernelBuilder CreateKernelBuilder(string modelId)
     {
+        // Create HttpClient with custom headers and timeout
+        var httpClient = new HttpClient
+        {
+            Timeout = TimeSpan.FromSeconds(300) // Set timeout to 300 seconds
+        };
+
+        // Uncomment the following line to add custom headers if needed
+        // httpClient.DefaultRequestHeaders.Add("My-Custom-Header", "My Custom Value");
+
         IKernelBuilder kernelBuilder = Kernel.CreateBuilder();
 
-        string deploymentName = modelId;
-        string endpoint = GetEnvironmentVariable("AZURE_OPENAI_ENDPOINT");
-        string apiKey = GetEnvironmentVariable("AZURE_OPENAI_KEY");
-
-
-        int embeddingsdDimensions = 3072;
-
-        //string modelId = "gpt-4o-mini";
-
-        // Create HttpClient with custom headers and timeout
-        var httpClient = new HttpClient();
-        //httpClient.DefaultRequestHeaders.Add("My-Custom-Header", "My Custom Value");
-        httpClient.Timeout = TimeSpan.FromSeconds(300);  // Set NetworkTimeout to 30 seconds
-
-
+        // Configure chat completion
         kernelBuilder.AddAzureOpenAIChatCompletion(
-            deploymentName: deploymentName,
+            deploymentName: modelId,//completionDeploymentName,
             endpoint: endpoint,
             apiKey: apiKey,
-            modelId: modelId, // Optional name of the underlying model if the deployment name doesn't match the model name
-                              //serviceId: "YOUR_SERVICE_ID", // Optional; for targeting specific services within Semantic Kernel
-            httpClient: httpClient // Optional; if not provided, the HttpClient from the kernel will be used
-            );
+            httpClient: httpClient);
+
+        // Configure text embedding generation
         kernelBuilder.AddAzureOpenAITextEmbeddingGeneration(
-            deploymentName: "text-embedding-3-large",
-            endpoint: endpoint,
-            apiKey: apiKey,
-            modelId: "text-embedding-3-large", // Optional name of the underlying model if the deployment name doesn't match the model name
-                                               //serviceId: "YOUR_SERVICE_ID", // Optional; for targeting specific services within Semantic Kernel
-            dimensions: embeddingsdDimensions,
-            httpClient: httpClient // Optional; if not provided, the HttpClient from the kernel will be used
-            );
+            deploymentName: embeddingDeploymentName,
+            endpoint: endpointEmbedding,
+            apiKey: apiKeyEmbedding,
+            dimensions: dimensions,
+            httpClient: httpClient);
+
         return kernelBuilder;
     }
     static string GetEnvironmentVariable(string variableName)

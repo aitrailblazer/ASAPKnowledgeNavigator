@@ -23,6 +23,9 @@ namespace Cosmos.Copilot.Models
         [JsonProperty("categoryId")]
         public string CategoryId { get; set; }
 
+        [JsonProperty("partitionKey")]
+        public string PartitionKey => $"{TenantId}_{UserId}_{CategoryId}";
+
         [JsonProperty("title")]
         public string Title { get; set; }
 
@@ -41,22 +44,26 @@ namespace Cosmos.Copilot.Models
         [JsonProperty("updatedAt")]
         public DateTime UpdatedAt { get; set; }
 
-        
         [JsonProperty("similarityScore")]
         public double SimilarityScore { get; set; }
 
         [JsonProperty("relevanceScore")]
         public double RelevanceScore { get; set; }
 
-        
         [JsonProperty("vectors")]
         public float[] Vectors { get; set; }
 
         /// <summary>
-        /// Default constructor for deserialization.
+        /// Public default constructor for deserialization and general usage.
         /// </summary>
-        [JsonConstructor]
-        private KnowledgeBaseItem() { }
+        public KnowledgeBaseItem()
+        {
+            Id = Guid.NewGuid().ToString();
+            Type = nameof(KnowledgeBaseItem);
+            CreatedAt = DateTime.UtcNow;
+            UpdatedAt = DateTime.UtcNow;
+            Vectors = Array.Empty<float>();
+        }
 
         /// <summary>
         /// Constructor for creating a new knowledge base item with a unique Id.
@@ -64,7 +71,7 @@ namespace Cosmos.Copilot.Models
         /// <param name="uniqueKey">The unique identifier for the knowledge base item.</param>
         /// <param name="tenantId">The tenant ID.</param>
         /// <param name="userId">The user ID.</param>
-        /// <param name="category">The category of the item.</param>
+        /// <param name="categoryId">The category of the item.</param>
         /// <param name="title">The title of the item.</param>
         /// <param name="content">The content of the item.</param>
         /// <param name="referenceDescription">Description for referencing the item.</param>
@@ -85,7 +92,7 @@ namespace Cosmos.Copilot.Models
             if (string.IsNullOrWhiteSpace(uniqueKey)) throw new ArgumentException("UniqueKey cannot be null or empty.", nameof(uniqueKey));
             if (string.IsNullOrWhiteSpace(tenantId)) throw new ArgumentException("TenantId cannot be null or empty.", nameof(tenantId));
             if (string.IsNullOrWhiteSpace(userId)) throw new ArgumentException("UserId cannot be null or empty.", nameof(userId));
-            if (string.IsNullOrWhiteSpace(categoryId)) throw new ArgumentException("Category cannot be null or empty.", nameof(categoryId));
+            if (string.IsNullOrWhiteSpace(categoryId)) throw new ArgumentException("CategoryId cannot be null or empty.", nameof(categoryId));
             if (string.IsNullOrWhiteSpace(title)) throw new ArgumentException("Title cannot be null or empty.", nameof(title));
             if (string.IsNullOrWhiteSpace(content)) throw new ArgumentException("Content cannot be null or empty.", nameof(content));
 

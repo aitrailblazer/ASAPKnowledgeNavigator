@@ -36,6 +36,14 @@ using Azure.Core;
 using System.Text.Json;
 using Newtonsoft.Json;
 using BlingFire;
+using System.Linq;
+using System.Diagnostics;
+
+using Microsoft.Extensions.VectorData;
+using Microsoft.SemanticKernel.Connectors.InMemory;
+using Microsoft.SemanticKernel.Connectors.OpenAI;
+using Microsoft.SemanticKernel.Data;
+using Microsoft.SemanticKernel.Embeddings;
 class Program
 {
 
@@ -73,12 +81,20 @@ class Program
         Console.WriteLine("  SEC-RAG-Navigator create-container <containerName>");
         Console.WriteLine("  SEC-RAG-Navigator list-containers");
         Console.WriteLine("  SEC-RAG-Navigator rag-chat-service");
+        Console.WriteLine("  SEC-RAG-Navigator rag-chat-service-cohere");
         Console.WriteLine("  SEC-RAG-Navigator rag-chat-service-delete");
         Console.WriteLine("  SEC-RAG-Navigator knowledge-base-search \"<promptText>\"");
+        Console.WriteLine("  SEC-RAG-Navigator knowledge-base-rag-search \"<promptText>\"");
+        Console.WriteLine("  SEC-RAG-Navigator knowledge-base-rag-rerank-search \"<promptText>\"");
         Console.WriteLine("  SEC-RAG-Navigator phi-3.5-moe-instruct");
         Console.WriteLine("  SEC-RAG-Navigator phi-3.5-moe-instruct-streaming");
-        Console.WriteLine("  SEC-RAG-Navigator cohere-command-r+");
-        Console.WriteLine("  SEC-RAG-Navigator streaming-cohere-command-r+");
+        Console.WriteLine("  SEC-RAG-Navigator cohere-command-r+chat");
+        Console.WriteLine("  SEC-RAG-Navigator cohere-command-r+chat-streaming");
+        Console.WriteLine("  SEC-RAG-Navigator cohere-command-r+chat-streaming-http");
+        Console.WriteLine("  SEC-RAG-Navigator cohere-embed-dbupsert");
+        Console.WriteLine("  SEC-RAG-Navigator vector-store");
+
+
 
     }
 
@@ -111,9 +127,10 @@ class Program
                     var logger = provider.GetRequiredService<ILogger<CosmosDbServiceWorking>>();
                     var ragChatService = provider.GetRequiredService<RAGChatService<string>>(); // Resolve RAGChatService
                     var chatService = provider.GetRequiredService<ChatService>(); // Resolve ChatService
+                    var cosmosDbService = provider.GetRequiredService<CosmosDbService>(); // Resolve ChatService
 
                     // Return an instance of CosmosDbServiceWorking with all dependencies
-                    return new CosmosDbServiceWorking(cosmosClient, databaseId, logger, ragChatService, chatService);
+                    return new CosmosDbServiceWorking(cosmosClient, databaseId, logger, ragChatService, chatService, cosmosDbService);
                 });
 
 
@@ -169,10 +186,12 @@ class Program
     {
         // Fetch environment variables for Semantic Kernel
         string endpoint = GetEnvironmentVariable("AZURE_OPENAI_ENDPOINT");
+        string endpointEmbedding = GetEnvironmentVariable("AZURE_OPENAI_EMBEDDING_ENDPOINT");
         string apiKey = GetEnvironmentVariable("AZURE_OPENAI_KEY");
+        string apiKeyEmbedding = GetEnvironmentVariable("AZURE_OPENAI_EMBEDDING_KEY");
         string completionDeploymentName = GetEnvironmentVariable("AZURE_OPENAI_COMPLETION_DEPLOYMENT_NAME") ?? "gpt-4o";
         string embeddingDeploymentName = GetEnvironmentVariable("AZURE_OPENAI_EMBEDDING_DEPLOYMENT_NAME") ?? "text-embedding-3-large";
-        int dimensions = 3072;
+        int dimensions = 1024;
 
         // Register SemanticKernelService
         services.AddScoped<SemanticKernelService>(provider =>
@@ -181,9 +200,11 @@ class Program
 
             return new SemanticKernelService(
                 endpoint: endpoint,
+                endpointEmbedding: endpointEmbedding,
                 completionDeploymentName: completionDeploymentName,
                 embeddingDeploymentName: embeddingDeploymentName,
                 apiKey: apiKey,
+                apiKeyEmbedding: apiKeyEmbedding,
                 dimensions: dimensions,
                 logger: logger
             );
@@ -204,7 +225,7 @@ class Program
         string azureCosmosDBNoSQLConnectionString = GetEnvironmentVariable("COSMOS_DB_CONNECTION_STRING");
         string azureCosmosDBNoSQLDatabaseName = GetEnvironmentVariable("COSMOS_DB_DATABASE_ID");
         string ragCollectionName = "ragcontent";
-        int azureEmbeddingDimensions = 3072;
+        int azureEmbeddingDimensions = 1024;
 
         var kernelBuilder = services.AddKernel();
 
@@ -293,6 +314,8 @@ public class SEC_RAG_NavigatorService
 {
     private readonly CosmosDbServiceWorking _cosmosDbServiceWorking;
     private readonly ChatService _chatService;
+    private readonly CosmosDbService _cosmosDbService;
+
     private readonly ILogger<SEC_RAG_NavigatorService> _logger;
 
     /// <summary>
@@ -304,10 +327,13 @@ public class SEC_RAG_NavigatorService
     public SEC_RAG_NavigatorService(
         CosmosDbServiceWorking cosmosDbServiceWorking,
         ChatService chatService,
+        CosmosDbService cosmosDbService,
+
         ILogger<SEC_RAG_NavigatorService> logger)
     {
         _cosmosDbServiceWorking = cosmosDbServiceWorking ?? throw new ArgumentNullException(nameof(cosmosDbServiceWorking));
         _chatService = chatService ?? throw new ArgumentNullException(nameof(chatService));
+        _cosmosDbService = cosmosDbService ?? throw new ArgumentNullException(nameof(cosmosDbService));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
@@ -332,7 +358,7 @@ public class SEC_RAG_NavigatorService
                     "/vectors",
                     partitionKeyPaths,
                     new List<string> { "/*" },
-                    3072
+                    1024
                 );
             }
             else if (command == "list-containers")
@@ -344,6 +370,12 @@ public class SEC_RAG_NavigatorService
                 string tenantID = "1234";
                 string userID = "5678";
                 await _cosmosDbServiceWorking.HandleInputFileFromPath(tenantID, userID);
+            }
+            else if (command == "rag-chat-service-cohere")
+            {
+                string tenantID = "1234";
+                string userID = "5678";
+                await _cosmosDbServiceWorking.HandleCohereInputFileFromPath(tenantID, userID);
             }
             else if (command == "rag-chat-service-delete")
             {
@@ -369,6 +401,42 @@ public class SEC_RAG_NavigatorService
                     similarityScore: 0.7 // Default similarity score
                 );
             }
+            else if (command == "knowledge-base-rag-search" && args.Length >= 2)
+            {
+                // Retrieve the prompt text (e.g., "Risk factors")
+                string promptText = args[1];
+
+                // Example tenant and user ID
+                string tenantID = "1234";
+                string userID = "5678";
+
+                // Call the knowledge base search handler
+                await _cosmosDbServiceWorking.HandleKnowledgeBaseRAGCommandAsync(
+                    tenantId: tenantID,
+                    userId: userID,
+                    categoryId: "Document", // Example category
+                    promptText: promptText,
+                    similarityScore: 0.7 // Default similarity score
+                );
+            }
+            else if (command == "knowledge-base-rag-rerank-search" && args.Length >= 2)
+            {
+                // Retrieve the prompt text (e.g., "Risk factors")
+                string promptText = args[1];
+
+                // Example tenant and user ID
+                string tenantID = "1234";
+                string userID = "5678";
+
+                // Call the knowledge base search handler
+                await _cosmosDbServiceWorking.HandleKnowledgeBaseRAGRerankAsync(
+                    tenantId: tenantID,
+                    userId: userID,
+                    categoryId: "Document", // Example category
+                    promptText: promptText,
+                    similarityScore: 0.7 // Default similarity score
+                );
+            }
             else if (command == "phi-3.5-moe-instruct")
             {
                 await _cosmosDbServiceWorking.HandlePhi35MoEInstructCommandAsyncs();
@@ -377,14 +445,28 @@ public class SEC_RAG_NavigatorService
             {
                 await _cosmosDbServiceWorking.HandlePhi35MoEInstructStreamingCommandAsyncs();
             }
-            else if (command == "cohere-command-r+")
+            else if (command == "cohere-command-r+chat")
             {
-                await _cosmosDbServiceWorking.HandleCohereCommandRAsync();
+                await _cosmosDbServiceWorking.HandleCohereChatCommandRAsync();
             }
-            else if (command == "streaming-cohere-command-r+")
+            else if (command == "cohere-command-r+chat-streaming")
             {
-                await _cosmosDbServiceWorking.HandleCohereCommandRStreamingAsync();
+                await _cosmosDbServiceWorking.HandleCohereChatCommandRAsyncStreaming();
             }
+            else if (command == "cohere-command-r+chat-streaming-http")
+            {
+                await _cosmosDbServiceWorking.HandleHttpCohereChatCommandRAsyncStreaming();
+            }
+            else if (command == "cohere-embed-dbupsert")
+            {
+                await _cosmosDbServiceWorking.HandleCohereEmbedUpsertAsync();
+            }
+            else if (command == "vector-store")
+            {
+                await _cosmosDbServiceWorking.HandleVectorStoreAsync();
+            }
+
+
             else
             {
                 Console.WriteLine("Invalid command or missing arguments. Use one of the following:");
@@ -407,12 +489,19 @@ public class SEC_RAG_NavigatorService
         Console.WriteLine("  SEC-RAG-Navigator create-container <containerName>");
         Console.WriteLine("  SEC-RAG-Navigator list-containers");
         Console.WriteLine("  SEC-RAG-Navigator rag-chat-service");
+        Console.WriteLine("  SEC-RAG-Navigator rag-chat-service-cohere");
         Console.WriteLine("  SEC-RAG-Navigator rag-chat-service-delete");
         Console.WriteLine("  SEC-RAG-Navigator knowledge-base-search \"<promptText>\"");
+        Console.WriteLine("  SEC-RAG-Navigator knowledge-base-rag-search \"<promptText>\"");
+        Console.WriteLine("  SEC-RAG-Navigator knowledge-base-rag-rerank-search \"<promptText>\"");
         Console.WriteLine("  SEC-RAG-Navigator phi-3.5-moe-instruct");
         Console.WriteLine("  SEC-RAG-Navigator phi-3.5-moe-instruct-streaming");
-        Console.WriteLine("  SEC-RAG-Navigator cohere-command-r+");
-        Console.WriteLine("  SEC-RAG-Navigator streaming-cohere-command-r+");
+        Console.WriteLine("  SEC-RAG-Navigator cohere-command-r+chat");
+        Console.WriteLine("  SEC-RAG-Navigator cohere-command-r+chat-streaming");
+        Console.WriteLine("  SEC-RAG-Navigator cohere-command-r+chat-streaming-http");
+        Console.WriteLine("  SEC-RAG-Navigator cohere-embed-dbupsert");
+        Console.WriteLine("  SEC-RAG-Navigator vector-store");
+
 
     }
 }
@@ -424,6 +513,8 @@ public class CosmosDbServiceWorking
     private readonly ILogger<CosmosDbServiceWorking> _logger;
     private readonly RAGChatService<string> _ragChatService;
     private readonly ChatService _chatService;
+    private readonly CosmosDbService _cosmosDbService;
+
 
     /// <summary>
     /// Initializes a new instance of the <see cref="CosmosDbServiceWorking"/> class.
@@ -438,13 +529,15 @@ public class CosmosDbServiceWorking
         string databaseId,
         ILogger<CosmosDbServiceWorking> logger,
         RAGChatService<string> ragChatService,
-        ChatService chatService)
+        ChatService chatService,
+        CosmosDbService cosmosDbService)
     {
         _cosmosClient = cosmosClient ?? throw new ArgumentNullException(nameof(cosmosClient));
         _databaseId = databaseId ?? throw new ArgumentNullException(nameof(databaseId));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _ragChatService = ragChatService ?? throw new ArgumentNullException(nameof(ragChatService));
         _chatService = chatService ?? throw new ArgumentNullException(nameof(chatService));
+        _cosmosDbService = cosmosDbService ?? throw new ArgumentNullException(nameof(cosmosDbService));
     }
 
     /// <summary>
@@ -476,14 +569,21 @@ public class CosmosDbServiceWorking
         _logger.LogInformation($"Creating container '{containerName}' with partition key paths: {string.Join(", ", partitionKeyPaths)}");
 
         Database database = _cosmosClient.GetDatabase(_databaseId);
+        /*
+          Supported metrics for distanceFunction are:
 
+          cosine, which has values from -1 (least similar) to +1 (most similar).
+          dotproduct, which has values from -∞ (-inf) (least similar) to +∞ (+inf) (most similar).
+          euclidean, which has values from 0 (most similar) to +∞ (+inf) (least similar).
+
+          */
         Collection<Microsoft.Azure.Cosmos.Embedding> embeddings = new Collection<Microsoft.Azure.Cosmos.Embedding>()
             {
                 new Microsoft.Azure.Cosmos.Embedding()
                 {
                     Path = vectorPath,
-                    DataType = VectorDataType.Float32,
-                    DistanceFunction = DistanceFunction.Cosine,
+                    DataType = VectorDataType.Float32, //The data type of the vectors. Float32, Int8, Uint8 values. Default value is float32.
+                    DistanceFunction = Microsoft.Azure.Cosmos.DistanceFunction.Cosine, // DotProduct
                     Dimensions = dimensions
                 }
             };
@@ -501,7 +601,7 @@ public class CosmosDbServiceWorking
                         new VectorIndexPath()
                         {
                             Path = vectorPath,
-                            Type = VectorIndexType.DiskANN,
+                            Type = VectorIndexType.QuantizedFlat, //QuantizedFlat DiskANN
                         }
                     }
             }
@@ -602,6 +702,45 @@ public class CosmosDbServiceWorking
         return $"Successfully processed file: {fileName}";
     }
 
+    public async Task<string> HandleCohereInputFileFromPath(
+            string tenantID,
+            string userID)
+    {
+
+        var filePath = "tsla-20231231.htm.html.pdf";
+
+        // Generate a memoryKey based on tenantID, userID, and fileName
+        var fileName = "tsla-20231231.htm.html.pdf";
+        var memoryKey = $"{tenantID}-{userID}-{fileName}";
+        Console.WriteLine($"HandleInputFileFromPath memoryKey: {memoryKey}");
+
+        try
+        {
+            // Call ProcessPdfAsync directly
+            Console.WriteLine($"Calling ProcessPdfAsync for {filePath}");
+            await _ragChatService.ProcessPdfCohereAsync(
+                tenantID,
+                userID,
+                fileName,
+                filePath,
+                memoryKey,
+                CancellationToken.None);
+
+            Console.WriteLine("ProcessPdfAsync completed successfully");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error in HandleInputFileFromPath: {ex}");
+            throw;
+        }
+        finally
+        {
+
+            Console.WriteLine($"HandleInputFileFromPath completed");
+        }
+
+        return $"Successfully processed file: {fileName}";
+    }
 
     public async Task<string> DeleteRag(
          string tenantID,
@@ -660,10 +799,15 @@ public class CosmosDbServiceWorking
         string promptText,
         double similarityScore)
     {
+
+
         Console.WriteLine("Calling GetKnowledgeBaseCompletionAsync...");
+
         try
         {
-            var (completion, title) = await _chatService.GetKnowledgeBaseCompletionAsync(
+            var stopwatch = Stopwatch.StartNew();
+
+            var (completion, title) = await _chatService.GetKnowledgeBaseCompletionInt8Async( // GetKnowledgeBaseCompletionAsync GetKnowledgeBaseCompletionInt8Async
                 tenantId: tenantId,
                 userId: userId,
                 categoryId: categoryId,
@@ -672,6 +816,9 @@ public class CosmosDbServiceWorking
 
             Console.WriteLine($"Completion Title: {title ?? "No Title"}");
             Console.WriteLine($"Completion Text:\n{completion}");
+            stopwatch.Stop();
+            _logger.LogInformation("GetKnowledgeBaseCompletionInt8Async: Time spent: {ElapsedMinutes} min {ElapsedSeconds} sec", stopwatch.Elapsed.Minutes, stopwatch.Elapsed.Seconds);
+
         }
         catch (Exception ex)
         {
@@ -679,6 +826,89 @@ public class CosmosDbServiceWorking
             Console.WriteLine($"Error: {ex.Message}");
         }
     }
+
+    public async Task HandleKnowledgeBaseRAGCommandAsync(
+           string tenantId,
+           string userId,
+           string categoryId,
+           string promptText,
+           double similarityScore)
+    {
+
+        Console.WriteLine("Calling GetKnowledgeBaseCompletionAsync...");
+
+        try
+        {
+            var stopwatch = Stopwatch.StartNew();
+
+            var (completion, title) = await _chatService.GetKnowledgeBaseCompletionRAGInt8Async( // GetKnowledgeBaseCompletionAsync GetKnowledgeBaseCompletionInt8Async
+                tenantId: tenantId,
+                userId: userId,
+                categoryId: categoryId,
+                promptText: promptText,
+                similarityScore: similarityScore);
+
+            //Console.WriteLine($"Completion Title: {title ?? "No Title"}");
+            //Console.WriteLine($"Completion Text:\n{completion}");
+            stopwatch.Stop();
+            _logger.LogInformation("GetKnowledgeBaseCompletionRAGInt8Async: Time spent: {ElapsedMinutes} min {ElapsedSeconds} sec", stopwatch.Elapsed.Minutes, stopwatch.Elapsed.Seconds);
+
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error occurred while calling GetKnowledgeBaseCompletionRAGInt8Async.");
+            Console.WriteLine($"Error: {ex.Message}");
+        }
+    }
+
+    public async Task HandleKnowledgeBaseRAGRerankAsync(
+     string tenantId,
+     string userId,
+     string categoryId,
+     string promptText,
+     double similarityScore)
+    {
+        Console.WriteLine("Calling GetKnowledgeBaseRerankRAGInt8Async...");
+
+        try
+        {
+            var stopwatch = Stopwatch.StartNew();
+
+            // Call GetKnowledgeBaseRerankRAGInt8Async to get reordered items
+            List<KnowledgeBaseItem> reorderedItems = await _chatService.GetKnowledgeBaseRerankRAGInt8Async(
+                tenantId: tenantId,
+                userId: userId,
+                categoryId: categoryId,
+                promptText: promptText,
+                similarityScore: similarityScore);
+
+            stopwatch.Stop();
+
+            if (reorderedItems.Any())
+            {
+                Console.WriteLine("Reordered Items:");
+                foreach (var item in reorderedItems)
+                {
+                    Console.WriteLine($"- Title: {item.Title}, Relevance Score: {item.RelevanceScore}");
+                }
+            }
+            else
+            {
+                Console.WriteLine("No reordered items returned.");
+            }
+
+            _logger.LogInformation(
+                "GetKnowledgeBaseRerankRAGInt8Async: Time spent: {ElapsedMinutes} min {ElapsedSeconds} sec",
+                stopwatch.Elapsed.Minutes,
+                stopwatch.Elapsed.Seconds);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error occurred while calling GetKnowledgeBaseRerankRAGInt8Async.");
+            Console.WriteLine($"Error: {ex.Message}");
+        }
+    }
+
 
 
     /// <summary>
@@ -979,7 +1209,7 @@ public class CosmosDbServiceWorking
         string apiKey = GetEnvironmentVariable("AZURE_OPENAI_KEY");
 
 
-        int embeddingsdDimensions = 3072;
+        int embeddingsdDimensions = 1024;
 
         //string modelId = "gpt-4o-mini";
 
@@ -1148,21 +1378,14 @@ The output should be maximum of {{maxTokens}}. Try to fit it all in. Don't cut
             Console.WriteLine($"Error: {ex.Message}");
         }
     }
-    public async Task HandleCohereCommandRAsync()
+    public async Task HandleCohereChatCommandRAsync()
     {
-        /*
-string system_message = @"## Task and Context
-----> TELL THE MODEL WHO IT IS AND WHAT IT DOES <----
-## Style Guide
-----> ADD INSTRUCTIONS FOR STYLISTIC CHOICES THE MODEL SHOULD MAKE <----";
-        */
         // Initial system message
-        string system_message = @"## Task and Context 
-            You are a writing assistant
-            ## Style Guide
+        string systemMessage = @"## Task and Context 
+        You are a writing assistant.
+        ## Style Guide
 Please follow these guidelines to ensure high-quality output:
 
-## Style Guide
 1. Use **US spelling** consistently throughout the text.
 2. Maintain a professional and concise tone.
 3. Structure content clearly using appropriate headings, bullet points, and numbering.
@@ -1170,51 +1393,48 @@ Please follow these guidelines to ensure high-quality output:
 5. Incorporate creativity by writing in **sonnets** where appropriate, while retaining professionalism.
 6. Avoid jargon unless explicitly required or beneficial for the audience.";
 
-        string input = @"## Input Text
-Write a title for a blog post about API design. Only output the title text";
-        // Append the style guide to the system message
-        //system_message += style_guide;
-        system_message = system_message.Replace("\r\n", " ").Replace("\n", " ");
+        string input = "Write a title for a blog post about API design. Only output the title text.";
+
+        // Clean up line breaks for JSON compatibility
+        systemMessage = systemMessage.Replace("\r\n", " ").Replace("\n", " ");
         input = input.Replace("\r\n", " ").Replace("\n", " ");
+
+        // Sample documents array
+        var documents = new[]
+        {
+        new { id = "1", data = "Cohere is the best!" }
+    };
 
         // Initialize HttpClientHandler with custom certificate validation
         using (var handler = new HttpClientHandler
         {
             ClientCertificateOptions = ClientCertificateOption.Manual,
-            ServerCertificateCustomValidationCallback = (httpRequestMessage, cert, cetChain, policyErrors) => true
+            ServerCertificateCustomValidationCallback = (_, _, _, _) => true
         })
-
         using (var client = new HttpClient(handler))
         {
             try
             {
-                // Construct request body using a JSON object for better readability and validation
-                string requestBody = @"
+                // Construct the request body
+                var requestBody = new
                 {
-                'messages': [
+                    model = "command-r-plus-08-2024",
+                    messages = new[]
                     {
-                    'role': 'system',
-                    'content': '{system_message}'
-                    },
-                    {
-                    'role': 'user', 
-                    'content': '{input}'
-                    }
-                ],
-                'max_tokens': 2048,
-                'temperature': 0.8,
-                'top_p': 0.1,
-                'frequency_penalty': 0,
-                'presence_penalty': 0,
-                'seed': 369
-                }"
-                  .Replace("'", "\"") // Replace single quotes with double quotes for valid JSON
-                  .Replace("{system_message}", system_message)
-                  .Replace("{input}", input); // Replace the placeholder with the actual value
+                    new { role = "system", content = systemMessage },
+                    new { role = "user", content = input }
+                },
+                    documents = documents,
+                    max_tokens = 2048,
+                    temperature = 0.8,
+                    frequency_penalty = 0,
+                    presence_penalty = 0,
+                    seed = 369
+                };
 
-
-                Console.WriteLine($"Request Body: {requestBody}");
-
+                // Serialize request body to JSON
+                string requestBodyJson = JsonConvert.SerializeObject(requestBody, Formatting.Indented);
+                Console.WriteLine($"Request Body: {requestBodyJson}");
 
                 // Retrieve API key and endpoint from environment variables
                 string apiKey = Environment.GetEnvironmentVariable("COHERE_KEY");
@@ -1228,10 +1448,11 @@ Write a title for a blog post about API design. Only output the title text";
                 client.BaseAddress = new Uri(apiEndpoint);
 
                 // Set up the request content
-                var content = new StringContent(requestBody, Encoding.UTF8, "application/json");
+                var content = new StringContent(requestBodyJson, Encoding.UTF8, "application/json");
 
                 // Send POST request
-                HttpResponseMessage response = await client.PostAsync("/chat/completions", content).ConfigureAwait(false);
+                HttpResponseMessage response = await client.PostAsync("v2/chat", content).ConfigureAwait(false);
+
                 if (response.IsSuccessStatusCode)
                 {
                     string result = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
@@ -1255,11 +1476,133 @@ Write a title for a blog post about API design. Only output the title text";
             catch (Exception ex)
             {
                 Console.WriteLine($"An error occurred: {ex.Message}");
-                // Optionally log the exception or handle it further
             }
         }
     }
-    public async Task HandleCohereCommandRStreamingAsync()
+
+    public async Task HandleHttpCohereChatCommandRAsyncStreaming()
+    {
+        // Define the system message and user input
+        string systemMessage = @"## Task and Context 
+    You are a writing assistant
+    ## Style Guide
+Please follow these guidelines to ensure high-quality output:
+
+## Style Guide
+1. Use **US spelling** consistently throughout the text.
+2. Maintain a professional and concise tone.
+3. Structure content clearly using appropriate headings, bullet points, and numbering.
+4. Ensure grammar, punctuation, and spelling are accurate.
+5. Incorporate creativity by writing in **sonnets** where appropriate, while retaining professionalism.
+6. Avoid jargon unless explicitly required or beneficial for the audience.";
+
+        string userInput = "Write a blog post about API design.";
+
+        // Prepare the request payload
+        var requestBodyObject = new
+        {
+            messages = new[]
+            {
+            new { role = "system", content = systemMessage },
+            new { role = "user", content = userInput }
+        },
+            max_tokens = 2048,
+            temperature = 0.8,
+            top_p = 0.1,
+            frequency_penalty = 0,
+            presence_penalty = 0,
+            stream = true // Enable streaming responses
+        };
+
+        string requestBody = Newtonsoft.Json.JsonConvert.SerializeObject(requestBodyObject, Newtonsoft.Json.Formatting.Indented);
+
+        Console.WriteLine("Request Body (Pretty Printed):");
+        Console.WriteLine(requestBody);
+
+        // Retrieve API key and endpoint from environment variables
+        string apiKey = Environment.GetEnvironmentVariable("COHERE_KEY");
+        string apiEndpoint = Environment.GetEnvironmentVariable("COHERE_ENDPOINT");
+        if (string.IsNullOrEmpty(apiKey) || string.IsNullOrEmpty(apiEndpoint))
+        {
+            throw new InvalidOperationException("API key or endpoint is not configured.");
+        }
+
+        using (var handler = new HttpClientHandler
+        {
+            ClientCertificateOptions = ClientCertificateOption.Manual,
+            ServerCertificateCustomValidationCallback = (httpRequestMessage, cert, certChain, policyErrors) => true
+        })
+
+        using (var client = new HttpClient(handler))
+        {
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
+            client.BaseAddress = new Uri(apiEndpoint);
+
+            try
+            {
+                // Set up the request content
+                var content = new StringContent(requestBody, Encoding.UTF8, "application/json");
+
+                // Send POST request to the chat completions endpoint with streaming enabled
+                HttpResponseMessage response = await client.PostAsync("/chat/completions", content).ConfigureAwait(false);
+                if (response.IsSuccessStatusCode)
+                {
+                    using (var responseStream = await response.Content.ReadAsStreamAsync().ConfigureAwait(false))
+                    using (var reader = new StreamReader(responseStream))
+                    {
+                        Console.WriteLine("Streaming Response:");
+
+                        while (!reader.EndOfStream)
+                        {
+                            // Read each line from the response stream
+                            var line = await reader.ReadLineAsync().ConfigureAwait(false);
+
+                            // Skip empty lines or lines that don't start with "data:"
+                            if (string.IsNullOrWhiteSpace(line) || !line.StartsWith("data:")) continue;
+
+                            var jsonData = line.Substring(5).Trim(); // Remove "data:" prefix
+                            if (jsonData == "[DONE]") break; // End of the stream
+
+                            try
+                            {
+                                // Parse JSON data and extract content
+                                var chunk = Newtonsoft.Json.JsonConvert.DeserializeObject<dynamic>(jsonData);
+                                var deltaContent = chunk?.choices?[0]?.delta?.content;
+
+                                if (deltaContent != null)
+                                {
+                                    Console.Write(deltaContent.ToString()); // Output content immediately
+                                    Console.Out.Flush(); // Ensure real-time output
+                                }
+                            }
+                            catch (Newtonsoft.Json.JsonException ex)
+                            {
+                                Console.WriteLine($"Error parsing JSON: {ex.Message}");
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    Console.WriteLine($"The request failed with status code: {response.StatusCode}");
+                    string responseContent = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+                    var formattedErrorJson = Newtonsoft.Json.JsonConvert.SerializeObject(Newtonsoft.Json.JsonConvert.DeserializeObject(responseContent), Newtonsoft.Json.Formatting.Indented);
+                    Console.WriteLine($"Error Details (Formatted JSON):");
+                    Console.WriteLine(formattedErrorJson);
+                }
+            }
+            catch (Newtonsoft.Json.JsonException ex)
+            {
+                Console.WriteLine($"An error occurred while parsing JSON: {ex.Message}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"An error occurred: {ex.Message}");
+            }
+        }
+    }
+
+    public async Task HandleCohereChatCommandRAsyncStreaming()
     {
         // Step 1: Initialize the client with endpoint and API key
         var client = new ChatCompletionsClient(
@@ -1345,7 +1688,567 @@ Write a title for a blog post about API design. Only output the title text";
             Console.WriteLine($"Error: {ex.Message}");
         }
     }
+    public async Task<string[]> HandleCohereQueryGenerationAsync(string input)
+    {
+        string system_message = @"## Task and Context 
+        You are a query generation assistant.
+        ## Style Guide
+Please follow these guidelines to ensure high-quality output:
+1. Use **US spelling** consistently throughout the text.
+2. Maintain a professional and concise tone.
+3. Structure queries clearly and ensure they are relevant to the input context.
+4. Avoid redundancy and ensure each query is unique.";
 
+        // Clean up input strings
+        system_message = system_message.Replace("\r\n", " ").Replace("\n", " ");
+        input = input.Replace("\r\n", " ").Replace("\n", " ");
+
+        // Initialize HttpClientHandler with custom certificate validation
+        using var handler = new HttpClientHandler
+        {
+            ClientCertificateOptions = ClientCertificateOption.Manual,
+            ServerCertificateCustomValidationCallback = (httpRequestMessage, cert, cetChain, policyErrors) => true
+        };
+
+        using var client = new HttpClient(handler);
+        try
+        {
+            // Construct request body for query generation
+            string requestBody = @"
+        {
+            'messages': [
+                {
+                    'role': 'system',
+                    'content': '{system_message}'
+                },
+                {
+                    'role': 'user', 
+                    'content': '{input}'
+                }
+            ],
+            'max_tokens': 2048,
+            'temperature': 0.8,
+            'top_p': 0.1,
+            'frequency_penalty': 0,
+            'presence_penalty': 0,
+            'seed': 369
+        }"
+              .Replace("'", "\"") // Replace single quotes with double quotes for valid JSON
+              .Replace("{system_message}", system_message)
+              .Replace("{input}", input); // Replace placeholders with actual values
+
+            Console.WriteLine($"Request Body: {requestBody}");
+
+            // Retrieve API key and endpoint from environment variables
+            string apiKey = Environment.GetEnvironmentVariable("COHERE_KEY");
+            string apiEndpoint = Environment.GetEnvironmentVariable("COHERE_ENDPOINT");
+            if (string.IsNullOrEmpty(apiKey) || string.IsNullOrEmpty(apiEndpoint))
+            {
+                throw new InvalidOperationException("API key or endpoint is not configured.");
+            }
+
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
+            client.BaseAddress = new Uri(apiEndpoint);
+
+            // Set up the request content
+            var content = new StringContent(requestBody, Encoding.UTF8, "application/json");
+
+            // Send POST request to generate queries
+            HttpResponseMessage response = await client.PostAsync("/chat/completions", content).ConfigureAwait(false);
+            if (response.IsSuccessStatusCode)
+            {
+                string result = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+
+                // Parse the response JSON to extract generated queries
+                var responseJson = JsonConvert.DeserializeObject<dynamic>(result);
+                var generatedQueries = new List<string>();
+
+                foreach (var choice in responseJson.choices)
+                {
+                    if (choice.message != null && choice.message.content != null)
+                    {
+                        generatedQueries.Add(choice.message.content.ToString());
+                    }
+                }
+
+                Console.WriteLine("Generated Queries:");
+                foreach (var query in generatedQueries)
+                {
+                    Console.WriteLine(query);
+                }
+
+                return generatedQueries.ToArray();
+            }
+            else
+            {
+                Console.WriteLine($"The request failed with status code: {response.StatusCode}");
+                string responseContent = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+                Console.WriteLine($"Error Details: {responseContent}");
+                return Array.Empty<string>();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"An error occurred: {ex.Message}");
+            return Array.Empty<string>();
+        }
+    }
+
+
+    // "How to connect with my teammates?"
+    public async Task HandleCohereEmbedUpsertAsync()
+    {
+        // Define a list of input documents for embedding
+        var documents = new List<string>
+    {
+        "Joining Slack Channels: You will receive an invite via email. Be sure to join relevant channels to stay informed and engaged.",
+        "Finding Coffee Spots: For your caffeine fix, head to the break room's coffee machine or cross the street to the café for artisan coffee.",
+        "Team-Building Activities: We foster team spirit with monthly outings and weekly game nights. Feel free to suggest new activity ideas anytime!",
+        "Working Hours Flexibility: We prioritize work-life balance. While our core hours are 9 AM to 5 PM, we offer flexibility to adjust as needed."
+    };
+
+        // Initialize HttpClientHandler with custom certificate validation
+        using var handler = new HttpClientHandler
+        {
+            ClientCertificateOptions = ClientCertificateOption.Manual,
+            ServerCertificateCustomValidationCallback = (httpRequestMessage, cert, certChain, policyErrors) => true
+        };
+
+        using var client = new HttpClient(handler);
+        try
+        {
+            // Retrieve API key and endpoint from environment variables
+            string apiKey = Environment.GetEnvironmentVariable("COHERE_EMBED_KEY");
+            string apiEndpoint = Environment.GetEnvironmentVariable("COHERE_EMBED_ENDPOINT");
+
+            if (string.IsNullOrWhiteSpace(apiKey) || string.IsNullOrWhiteSpace(apiEndpoint))
+            {
+                throw new InvalidOperationException("API key or endpoint is not configured.");
+            }
+
+            // Generate embeddings for the documents
+            var vectors = (await GenerateDocumentsEmbeddingsCohereWithRetryAsync(apiKey, apiEndpoint, documents).ConfigureAwait(false)).ToArray();
+
+            Console.WriteLine("Vectors:");
+            for (int i = 0; i < vectors.Length; i++)
+            {
+                Console.WriteLine($"Vector {i + 1}: {string.Join(", ", vectors[i])}");
+            }
+            /*
+            "id": "memoryKey-page1-counterBatchContent-i-D5",
+                "type": "KnowledgeBaseItem",
+                "tenantId": "1234",
+                "userId": "5678",
+                "categoryId": "Document",
+                "partitionKey": "1234_5678_SampleCategory",
+                "title": "Page 1",
+                "content": "Joining Slack Channels: You will receive an invite via email. Be sure to join relevant channels to stay informed and engaged.",
+                "referenceDescription": "SampleFile#page=1",
+                "referenceLink": "SampleDestination#page=1",
+                "createdAt": "2025-01-12T07:50:56.560731Z",
+                "updatedAt": "2025-01-12T07:50:56.560748Z",
+                "similarityScore": 0,
+                "relevanceScore": 0,
+                "vectors": [
+                    -0.00088739395,
+                    -0.020050049,
+                    -0.016845703,
+            */
+            // Process embeddings and create KnowledgeBaseItem objects
+            string tenantId = "1234";
+            string userId = "5678";
+            string categoryId = "Document";
+            string fileName = "SampleFile";
+            string destination = "SampleDestination";
+            int index = 1;
+
+            foreach (var vector in vectors)
+            {
+                string uniqueKey = $"memoryKey-page{index}-counterBatchContent-i-D5";
+
+                // Create the KnowledgeBaseItem
+                var knowledgeBaseItem = new KnowledgeBaseItem(
+                    uniqueKey, // Assigning uniqueKey as the Id
+                    tenantId: tenantId,
+                    userId: userId,
+                    categoryId: categoryId, // Use file name as the category
+                    title: $"Page {index}",
+                    content: documents[index - 1], // Use the corresponding document content
+                    referenceDescription: $"{fileName}#page={index}",
+                    referenceLink: $"{destination}#page={index}",
+                    vectors: vector // Assign the embedding vector
+                );
+
+                Console.WriteLine($"Upserting KnowledgeBaseItem with Id: {uniqueKey}");
+                // Upsert the KnowledgeBaseItem into Cosmos DB
+                await _cosmosDbService.UpsertKnowledgeBaseItemAsync(
+                    tenantId,
+                    userId,
+                    categoryId,
+                    knowledgeBaseItem
+                );
+
+                Console.WriteLine($"Successfully upserted item with Id: {uniqueKey}");
+                index++;
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"An error occurred: {ex.Message}");
+        }
+    }
+
+    public async Task HandleVectorStoreAsync()
+    {
+        string azureOpenAIChatDeploymentName = "gpt-4o";
+        string azureEmbeddingDeploymentName = "text-embedding-3-large";
+        string azureOpenAIEndpoint = GetEnvironmentVariable("AZURE_OPENAI_ENDPOINT");
+        string azureOpenAIKey = GetEnvironmentVariable("AZURE_OPENAI_KEY");
+        string azureCosmosDBNoSQLConnectionString = GetEnvironmentVariable("COSMOS_DB_CONNECTION_STRING");
+        string azureCosmosDBNoSQLDatabaseName = GetEnvironmentVariable("COSMOS_DB_DATABASE_ID");
+        string ragCollectionName = "ragcontent";
+        int azureEmbeddingDimensions = 1024;
+
+        var kernelBuilder = Kernel.CreateBuilder();
+
+        kernelBuilder.AddAzureOpenAIChatCompletion(
+            azureOpenAIChatDeploymentName,
+            azureOpenAIEndpoint,
+            azureOpenAIKey);
+
+        kernelBuilder.AddAzureOpenAITextEmbeddingGeneration(
+            azureEmbeddingDeploymentName,
+            azureOpenAIEndpoint,
+            azureOpenAIKey,
+            dimensions: azureEmbeddingDimensions);
+        var kernel = kernelBuilder.Build();
+
+        var textEmbeddingGeneration = kernel.GetRequiredService<ITextEmbeddingGenerationService>();
+        // Construct an InMemory vector store.
+        var vectorStore = new InMemoryVectorStore();
+        var collectionName = "records";
+
+        // Delegate which will create a record.
+        static DataModel CreateRecord(string text, ReadOnlyMemory<float> embedding)
+        {
+            return new()
+            {
+                Key = Guid.NewGuid(),
+                Text = text,
+                Embedding = embedding
+            };
+        }
+        // Create a record collection from a list of strings using the provided delegate.
+        string[] lines =
+        [
+            "Semantic Kernel is a lightweight, open-source development kit that lets you easily build AI agents and integrate the latest AI models into your C#, Python, or Java codebase. It serves as an efficient middleware that enables rapid delivery of enterprise-grade solutions.",
+            "Semantic Kernel is a new AI SDK, and a simple and yet powerful programming model that lets you add large language capabilities to your app in just a matter of minutes. It uses natural language prompting to create and execute semantic kernel AI tasks across multiple languages and platforms.",
+            "In this guide, you learned how to quickly get started with Semantic Kernel by building a simple AI agent that can interact with an AI service and run your code. To see more examples and learn how to build more complex AI agents, check out our in-depth samples."
+        ];
+        var vectorizedSearch = await CreateCollectionFromListAsync<Guid, DataModel>(
+            vectorStore, collectionName, lines, textEmbeddingGeneration, CreateRecord);
+
+        /*
+        Directly constructs VectorStoreTextSearch<DataModel> with the raw vectorizedSearch and textEmbeddingGeneration.
+        Simpler but less flexible for adding custom processing layers.
+        */
+        // Create a text search instance using the InMemory vector store.
+        var textSearch = new VectorStoreTextSearch<DataModel>(vectorizedSearch, textEmbeddingGeneration);
+        await ExecuteSearchesAsync(textSearch);
+
+        /*
+        Adds a VectorizedSearchWrapper<DataModel> between vectorizedSearch and VectorStoreTextSearch<DataModel>.
+        Offers additional flexibility and modularity, enabling easier changes or extensions in the vectorized search process.
+        */
+        // Create a text search instance using a vectorized search wrapper around the InMemory vector store.
+        IVectorizableTextSearch<DataModel> vectorizableTextSearch = new VectorizedSearchWrapper<DataModel>(vectorizedSearch, textEmbeddingGeneration);
+        textSearch = new VectorStoreTextSearch<DataModel>(vectorizableTextSearch);
+        await ExecuteSearchesAsync(textSearch);
+    }
+    private async Task ExecuteSearchesAsync(VectorStoreTextSearch<DataModel> textSearch)
+    {
+        var query = "What is the Semantic Kernel?";
+
+        // Search and return results as a string items
+        KernelSearchResults<string> stringResults = await textSearch.SearchAsync(query, new() { Top = 2, Skip = 0 });
+        Console.WriteLine("--- String Results ---\n");
+        await foreach (string result in stringResults.Results)
+        {
+            Console.WriteLine(result);
+            WriteHorizontalRule();
+        }
+
+        // Search and return results as TextSearchResult items
+        KernelSearchResults<TextSearchResult> textResults = await textSearch.GetTextSearchResultsAsync(query, new() { Top = 2, Skip = 0 });
+        Console.WriteLine("\n--- Text Search Results ---\n");
+        await foreach (TextSearchResult result in textResults.Results)
+        {
+            Console.WriteLine($"Name:  {result.Name}");
+            Console.WriteLine($"Value: {result.Value}");
+            Console.WriteLine($"Link:  {result.Link}");
+            WriteHorizontalRule();
+        }
+
+        // Search and returns results as DataModel items
+        KernelSearchResults<object> fullResults = await textSearch.GetSearchResultsAsync(query, new() { Top = 2, Skip = 0 });
+        Console.WriteLine("\n--- DataModel Results ---\n");
+        await foreach (DataModel result in fullResults.Results)
+        {
+            Console.WriteLine($"Key:         {result.Key}");
+            Console.WriteLine($"Text:        {result.Text}");
+            Console.WriteLine($"Embedding:   {result.Embedding.Length}");
+            WriteHorizontalRule();
+        }
+    }
+
+    /// <summary>
+    /// Delegate to create a record.
+    /// </summary>
+    /// <typeparam name="TKey">Type of the record key.</typeparam>
+    /// <typeparam name="TRecord">Type of the record.</typeparam>
+    internal delegate TRecord CreateRecord<TKey, TRecord>(string text, ReadOnlyMemory<float> vector) where TKey : notnull;
+
+    /// <summary>
+    /// Create a <see cref="IVectorStoreRecordCollection{TKey, TRecord}"/> from a list of strings by:
+    /// 1. Creating an instance of <see cref="InMemoryVectorStoreRecordCollection{TKey, TRecord}"/>
+    /// 2. Generating embeddings for each string.
+    /// 3. Creating a record with a valid key for each string and it's embedding.
+    /// 4. Insert the records into the collection.
+    /// </summary>
+    /// <param name="vectorStore">Instance of <see cref="IVectorStore"/> used to created the collection.</param>
+    /// <param name="collectionName">The collection name.</param>
+    /// <param name="entries">A list of strings.</param>
+    /// <param name="embeddingGenerationService">A text embedding generation service.</param>
+    /// <param name="createRecord">A delegate which can create a record with a valid key for each string and it's embedding.</param>
+    internal static async Task<IVectorStoreRecordCollection<TKey, TRecord>> CreateCollectionFromListAsync<TKey, TRecord>(
+        IVectorStore vectorStore,
+        string collectionName,
+        string[] entries,
+        ITextEmbeddingGenerationService embeddingGenerationService,
+        CreateRecord<TKey, TRecord> createRecord)
+        where TKey : notnull
+    {
+        // Get and create collection if it doesn't exist.
+        var collection = vectorStore.GetCollection<TKey, TRecord>(collectionName);
+        await collection.CreateCollectionIfNotExistsAsync().ConfigureAwait(false);
+
+        // Create records and generate embeddings for them.
+        var tasks = entries.Select(entry => Task.Run(async () =>
+        {
+            var record = createRecord(entry, await embeddingGenerationService.GenerateEmbeddingAsync(entry).ConfigureAwait(false));
+            await collection.UpsertAsync(record).ConfigureAwait(false);
+        }));
+        await Task.WhenAll(tasks).ConfigureAwait(false);
+
+        return collection;
+    }
+
+    private const int HorizontalRuleLength = 80;
+
+    /// <summary>
+    /// Utility method to write a horizontal rule to the console.
+    /// </summary>
+    protected void WriteHorizontalRule()
+        => Console.WriteLine(new string('-', HorizontalRuleLength));
+
+    /// <summary>
+    /// Decorator for a <see cref="IVectorizedSearch{TRecord}"/> that generates embeddings for text search queries.
+    /// </summary>
+    private sealed class VectorizedSearchWrapper<TRecord>(IVectorizedSearch<TRecord> vectorizedSearch, ITextEmbeddingGenerationService textEmbeddingGeneration) : IVectorizableTextSearch<TRecord>
+    {
+        /// <inheritdoc/>
+        public async Task<VectorSearchResults<TRecord>> VectorizableTextSearchAsync(string searchText, VectorSearchOptions? options = null, CancellationToken cancellationToken = default)
+        {
+            var vectorizedQuery = await textEmbeddingGeneration!.GenerateEmbeddingAsync(searchText, cancellationToken: cancellationToken).ConfigureAwait(false);
+
+            return await vectorizedSearch.VectorizedSearchAsync(vectorizedQuery, options, cancellationToken);
+        }
+    }
+
+    /// <summary>
+    /// Sample model class that represents a record entry.
+    /// </summary>
+    /// <remarks>
+    /// Note that each property is decorated with an attribute that specifies how the property should be treated by the vector store.
+    /// This allows us to create a collection in the vector store and upsert and retrieve instances of this class without any further configuration.
+    /// </remarks>
+    private sealed class DataModel
+    {
+        [VectorStoreRecordKey]
+        [TextSearchResultName]
+        public Guid Key { get; init; }
+
+        [VectorStoreRecordData]
+        [TextSearchResultValue]
+        public string Text { get; init; }
+
+        [VectorStoreRecordVector(1536)]
+        public ReadOnlyMemory<float> Embedding { get; init; }
+    }
+    private static async Task<float[][]> GenerateDocumentsEmbeddingsCohereWithRetryAsync(
+        string apiKey,
+        string apiEndpoint,
+        List<string> documents,
+        CancellationToken cancellationToken = default)
+    {
+        const int maxRetries = 3; // Maximum number of retries
+        const int retryDelayMilliseconds = 10_000; // Delay between retries in milliseconds
+        int tries = 0;
+
+        // Initialize HttpClientHandler with custom certificate validation
+        using var handler = new HttpClientHandler
+        {
+            ClientCertificateOptions = ClientCertificateOption.Manual,
+            ServerCertificateCustomValidationCallback = (_, _, _, _) => true
+        };
+
+        using var client = new HttpClient(handler)
+        {
+            BaseAddress = new Uri(apiEndpoint)
+        };
+
+        // Configure HttpClient headers
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
+        client.DefaultRequestHeaders.Add("extra-parameters", "pass-through");
+
+        while (tries < maxRetries)
+        {
+            try
+            {
+                // Prepare the embedding request payload
+                var requestBody = new
+                {
+                    input = documents,
+                    model = "embed-english-v3.0", // Specify the embedding model
+                    embeddingTypes = new[] { "int8" }, // Use int8 embeddings
+                    input_type = "document" // Specify input type as 'document'
+                };
+
+                // Serialize the request body
+                string requestBodyJson = JsonConvert.SerializeObject(requestBody, Formatting.Indented);
+
+                // Send the request
+                var content = new StringContent(requestBodyJson, Encoding.UTF8, "application/json");
+                HttpResponseMessage response = await client.PostAsync("/embeddings", content, cancellationToken).ConfigureAwait(false);
+
+                // Handle response
+                if (response.IsSuccessStatusCode)
+                {
+                    string result = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+
+                    // Parse the response
+                    var parsedResult = JsonConvert.DeserializeObject<dynamic>(result);
+                    if (parsedResult?.data != null && parsedResult.data.Count > 0)
+                    {
+                        // Extract embeddings for all documents
+                        var embeddings = new List<float[]>();
+                        foreach (var data in parsedResult.data)
+                        {
+                            var embeddingArray = data?.embedding?.ToObject<List<float>>()?.ToArray();
+                            if (embeddingArray != null)
+                            {
+                                embeddings.Add(embeddingArray);
+                            }
+                            else
+                            {
+                                throw new InvalidOperationException("One or more embeddings are null or could not be parsed.");
+                            }
+                        }
+
+                        Console.WriteLine($"Total Embeddings Generated: {embeddings.Count}");
+                        return embeddings.ToArray(); // Return all embeddings as a 2D array
+                    }
+
+                    throw new InvalidOperationException("Response data is null or empty.");
+                }
+                else
+                {
+                    // Log and handle non-successful responses
+                    string responseContent = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+                    Console.WriteLine($"Request failed with status code: {response.StatusCode}");
+                    Console.WriteLine($"Error Details: {responseContent}");
+                    throw new HttpRequestException($"Embedding request failed with status code {response.StatusCode}.");
+                }
+            }
+            catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.TooManyRequests && tries < maxRetries)
+            {
+                tries++;
+                Console.WriteLine($"Rate limit reached. Retrying ({tries}/{maxRetries}) in {retryDelayMilliseconds / 1000} seconds...");
+                await Task.Delay(retryDelayMilliseconds, cancellationToken).ConfigureAwait(false);
+            }
+            catch (Newtonsoft.Json.JsonException jsonEx)
+            {
+                Console.WriteLine($"Error parsing JSON response: {jsonEx.Message}");
+                throw;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"An error occurred: {ex.Message}");
+                throw;
+            }
+        }
+
+        throw new InvalidOperationException("Maximum retry attempts exceeded.");
+    }
+
+    private async Task SendEmbeddingRequestAsync(HttpClient client, object requestBody, string requestType)
+    {
+        try
+        {
+            string requestBodyJson = JsonConvert.SerializeObject(requestBody, Formatting.Indented);
+            //Console.WriteLine($"{requestType} Request Body:");
+            Console.WriteLine(requestBodyJson);
+
+            var content = new StringContent(requestBodyJson, Encoding.UTF8, "application/json");
+            HttpResponseMessage response = await client.PostAsync("/embeddings", content).ConfigureAwait(false);
+
+            if (response.IsSuccessStatusCode)
+            {
+                string result = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+                var parsedResult = JsonConvert.DeserializeObject<dynamic>(result);
+
+                Console.WriteLine($"{requestType} Embedding Result:");
+                Console.WriteLine(JsonConvert.SerializeObject(parsedResult, Formatting.Indented));
+
+                if (parsedResult?.data != null && parsedResult.data.Count > 0)
+                {
+                    // Ensure embeddingArray is converted to List<double>
+                    var embeddingArray = parsedResult.data[0]?.embedding?.ToObject<List<double>>();
+
+                    if (embeddingArray != null)
+                    {
+                        // Get the first 10 elements manually
+                        var embeddingPreview = new List<double>();
+                        for (int i = 0; i < embeddingArray.Count && i < 10; i++)
+                        {
+                            embeddingPreview.Add(embeddingArray[i]);
+                        }
+
+                        Console.WriteLine($"{requestType} Embedding (First 10 Values): {string.Join(", ", embeddingPreview)}");
+                        Console.WriteLine($"{requestType} Embedding Length: {embeddingArray.Count}");
+                    }
+                    else
+                    {
+                        Console.WriteLine($"{requestType} Embedding is null or could not be parsed.");
+                    }
+                }
+                else
+                {
+                    Console.WriteLine($"{requestType} Response data is null or empty.");
+                }
+            }
+            else
+            {
+                Console.WriteLine($"The {requestType} request failed with status code: {response.StatusCode}");
+                string responseContent = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+                Console.WriteLine($"{requestType} Error Details: {responseContent}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"An unexpected error occurred during {requestType} request: {ex.Message}");
+        }
+    }
     public async Task HandlePhi35MoEInstructStreamingCommandAsyncs()
     {
         string endpoint = GetEnvironmentVariable("PHI_ENDPOINT");

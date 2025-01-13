@@ -28,7 +28,17 @@ public interface IDataLoader
         int batchSize,
         int betweenBatchDelayInMs,
         CancellationToken cancellationToken);
-
+    Task LoadPdfCohere(
+        string tenantID,
+        string userID,
+        string fileName,
+        string directory,
+        string blobName,
+        string memoryKey,
+        Stream fileStream,
+        int batchSize,
+        int betweenBatchDelayInMs,
+        CancellationToken cancellationToken);
     Task DeletePdf(
           string tenantId,
           string userId,
