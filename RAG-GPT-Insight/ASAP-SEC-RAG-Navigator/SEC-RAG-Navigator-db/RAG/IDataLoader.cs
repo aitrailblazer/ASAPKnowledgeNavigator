@@ -39,6 +39,18 @@ public interface IDataLoader
         int batchSize,
         int betweenBatchDelayInMs,
         CancellationToken cancellationToken);
+    Task EDGARLoadPdfCohere(
+        string form,
+        string ticker,
+        string fileName,
+        string directory,
+        string blobName,
+        string memoryKey,
+        Stream fileStream,
+        int batchSize,
+        int betweenBatchDelayInMs,
+        CancellationToken cancellationToken);
+
     Task DeletePdf(
           string tenantId,
           string userId,
@@ -46,4 +58,11 @@ public interface IDataLoader
           string categoryId,
           int batchSize,
           int betweenBatchDelayInMs);
+    Task DeletePdfEDGAR(
+        string form,
+        string ticker,
+        string fileNamePrefix,
+        string categoryId,
+        int batchSize,
+        int betweenBatchDelayInMs);
 }

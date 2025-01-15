@@ -32,44 +32,27 @@ ASAP SEC-RAG-Navigator goes beyond basic data aggregation by using AI to transfo
 Q/A:
 
 ```bash
-dotnet run knowledge-base-search "what is the total revenue for 2023?"
-dotnet run knowledge-base-rag-search "total revenue 2023"
 
+
+
+
+
+--
+dotnet run knowledge-base-rag-search "total revenue 2023?"
 dotnet run knowledge-base-rag-search "What did the report say about the company's Q4 performance?"
-
-
-dotnet run knowledge-base-rag-search "What did the report say about the company's Q4 performance and its range of products and services?" 
-
-dotnet run knowledge-base-rag-search "How to stay connected with the company, and do you organize team events?"
-
-
 dotnet run knowledge-base-rag-search  "List the overall revenue numbers for 2021, 2022, and 2023 in the 10-K as bullet points, then explain the revenue growth trends."
-
-dotnet run knowledge-base-rag-rerank-search "total revenue 2023?"
-
-dotnet run knowledge-base-search "change in total revenue from 2022 to 2023?"
 
 dotnet run knowledge-base-rag-search "change in total revenue from 2022 to 2023?"
 
+dotnet run knowledge-base-rag-search "total revenue for each division for 2023"
 
-dotnet run knowledge-base-rag-rerank-search "change in total revenue from 2022 to 2023?"
+dotnet run knowledge-base-rag-search "What did the report say about the company's Q4 performance and its range of products and services?" 
 
-dotnet run knowledge-base-search "list the revenue you had for each division for 2023"
+dotnet run knowledge-base-rag-search  "What was the operating margin in 2023?"
 
-
-dotnet run knowledge-base-search "what was the change in total revenue from 2022 to 2023 for each division?"
-
-dotnet run knowledge-base-search "What was the operating margin in 2023?"
-
-dotnet run knowledge-base-search "Legal Proceedings"
-dotnet run knowledge-base-rag-search "Legal Proceedings"
-
-dotnet run knowledge-base-rag-rerank-search "Legal Proceedings"
-
-
-dotnet run knowledge-base-rag-search "Risk Factors"
+dotnet run knowledge-base-rag-search "Legal Proceedings summary"
 dotnet run knowledge-base-rag-search "Executive Compensation"
-dotnet run knowledge-base-rag-rerank-search "Executive Compensation"
+--
 
 
 ```

@@ -21,6 +21,7 @@ class SECFilings:
 
     def download_document(self, cik, accession_number, file_name, save_path):
         base_url = f"https://www.sec.gov/Archives/edgar/data/{cik}/{accession_number}/{file_name}"
+        print(f"Download link: {base_url}")
         content = requests.get(base_url, headers=self.headers).content.decode("utf-8")
 
         # Save the content as an HTML file

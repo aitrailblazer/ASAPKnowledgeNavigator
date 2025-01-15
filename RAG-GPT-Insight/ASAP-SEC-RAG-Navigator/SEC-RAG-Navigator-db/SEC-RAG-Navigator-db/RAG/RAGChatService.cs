@@ -310,6 +310,54 @@ public class RAGChatService<TKey>(
             Console.WriteLine($"Error processing file {filePath}: {fileException}");
         }
     }
+      public async Task ProcessPdfCohereEDGARAsync(
+        string form,
+        string ticker,
+        string fileName,
+        string filePath,
+        string memoryKey,
+        CancellationToken cancellationToken)
+    {
+        Console.WriteLine($"Loading PDF into vector store: {filePath}");
+
+        // Ensure the file exists before attempting to load
+        if (!File.Exists(filePath))
+        {
+            Console.WriteLine($"PDF file does not exist: {filePath}");
+            return;
+        }
+
+        try
+        {
+            // Open the file as a stream and pass it to the data loader
+            using var fileStream = new FileStream(
+                filePath,
+                FileMode.Open,
+                FileAccess.Read,
+                FileShare.Read,
+                bufferSize: 524288  // 512 KB buffer
+            );
+            string directory = "";
+            string blobName = "";
+            int DataLoadingBatchSize = 10;
+            int DataLoadingBetweenBatchDelayInMilliseconds = 1000;
+            await dataLoader.EDGARLoadPdfCohere(
+                form,
+                ticker,
+                fileName,
+                directory,
+                blobName,
+                memoryKey,
+                fileStream,
+                DataLoadingBatchSize,
+                DataLoadingBetweenBatchDelayInMilliseconds,
+                cancellationToken).ConfigureAwait(false);
+        }
+        catch (Exception fileException)
+        {
+            Console.WriteLine($"Error processing file {filePath}: {fileException}");
+        }
+    }
 
     public async Task DeletePdfAsync(
         string tenantID,
@@ -328,6 +376,37 @@ public class RAGChatService<TKey>(
             await dataLoader.DeletePdf(
                 tenantID,
                 userID,
+                fileNamePrefix,
+                categoryId,
+                batchSize,
+                betweenBatchDelayInMilliseconds
+            ).ConfigureAwait(false);
+
+            Console.WriteLine($"Successfully completed deletion for items with prefix: {fileNamePrefix}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error during deletion for items with prefix {fileNamePrefix}: {ex.Message}");
+            throw;
+        }
+    }
+   public async Task DeleteEDGARPdfAsync(
+        string form,
+        string ticker,
+        string fileNamePrefix,
+        string categoryId)
+    {
+        Console.WriteLine($"Starting deletion process for PDF items with prefix: {fileNamePrefix}");
+
+        try
+        {
+            // Call the DataLoader service to delete items based on the fileNamePrefix
+            int batchSize = 10; // Adjust batch size for deletion as needed
+            int betweenBatchDelayInMilliseconds = 1000; // Delay between batches to avoid throttling
+
+            await dataLoader.DeletePdfEDGAR(
+                form,
+                ticker,
                 fileNamePrefix,
                 categoryId,
                 batchSize,

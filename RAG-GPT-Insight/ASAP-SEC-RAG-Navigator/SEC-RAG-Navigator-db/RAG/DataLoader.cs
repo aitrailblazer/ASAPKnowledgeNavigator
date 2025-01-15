@@ -264,6 +264,7 @@ public class DataLoader<TKey>(
 
         stopwatch.Stop();
         _logger.LogInformation("Completed PDF loading process for file: {FileName}. Time spent: {ElapsedMinutes} min {ElapsedSeconds} sec", fileName, stopwatch.Elapsed.Minutes, stopwatch.Elapsed.Seconds);
+
     }
     public async Task LoadPdfCohere(
         string tenantId,
@@ -363,17 +364,116 @@ public class DataLoader<TKey>(
                 _logger.LogError(ex, "Error processing content for page {PageNumber}.", content.PageNumber);
             }
         }
+    }
+   public async Task EDGARLoadPdfCohere(
+        string form,
+        string ticker,
+        string fileName,
+        string directory,
+        string blobName,
+        string memoryKey,
+        Stream fileStream,
+        int batchSize,
+        int betweenBatchDelayInMs,
+        CancellationToken cancellationToken)
+    {
+        var stopwatch = Stopwatch.StartNew();
+        var stopwatch2 = Stopwatch.StartNew();
+
+        _logger.LogInformation("Starting PDF loading process for file: {FileName}", fileName);
+        // Ensure the vector store collection exists.
+        await _vectorStoreRecordCollection.CreateCollectionIfNotExistsAsync(cancellationToken).ConfigureAwait(false);
+
+        var EDGARknowledgeBaseItems = new List<EDGARKnowledgeBaseItem>();
+
+        // Extract sections from the PDF stream.
+        var sections = LoadTextAndImagesFromStream(fileStream, cancellationToken);
+
+        foreach (var content in sections)
+        {
+            var stopwatch1 = Stopwatch.StartNew();
+
+            try
+            {
+                _logger.LogInformation("Processing page {PageNumber}.", content.PageNumber);
+
+                if (content.Text == null && content.Image != null)
+                {
+                    // Convert image to text.
+                    content.Text = await ConvertImageToTextWithRetryAsync(
+                        chatCompletionService,
+                        content.Image.Value,
+                        cancellationToken
+                    ).ConfigureAwait(false);
+                }
+
+                if (string.IsNullOrWhiteSpace(content.Text))
+                {
+                    _logger.LogWarning("Skipped empty content for page {PageNumber}.", content.PageNumber);
+                    continue;
+                }
+
+                content.Text = SanitizeString(content.Text);
+                // Split content into sentences
+                var sentences = BlingFireUtils.GetSentences(content.Text).ToArray();
+
+
+                string apiKey = Environment.GetEnvironmentVariable("COHERE_EMBED_KEY");
+                string apiEndpoint = Environment.GetEnvironmentVariable("COHERE_EMBED_ENDPOINT");
+                _logger.LogInformation("GenerateArrayOfEmbeddingsCohereWithRetryAsync");
+
+                // Generate embeddings for all sentences in one request
+                var embeddings = await GenerateArrayOfEmbeddingsCohereWithRetryAsync(
+                    apiKey,
+                    apiEndpoint,
+                    sentences, // Array of sentences
+                    cancellationToken
+                );
+
+                // Create KnowledgeBaseItem for each sentence and embedding
+                for (int i = 0; i < sentences.Length; i++)
+                {
+                    string sentence = sentences[i];
+                    var vectors = embeddings[i].ToArray();
+
+                    string uniqueKey = $"{memoryKey}-page{content.PageNumber}-{i + 1}-D5";
+                    string destination = $"{form}/{ticker}/{directory}/{blobName}/{fileName}";
+                    string categoryId = "Document";
+
+                    var EDGARknowledgeBaseItem = new EDGARKnowledgeBaseItem(
+                        uniqueKey,
+                        form: form,
+                        ticker: ticker,
+                        categoryId: categoryId,
+                        title: $"Page {content.PageNumber}",
+                        content: sentence,
+                        referenceDescription: $"{fileName}#page={content.PageNumber}",
+                        referenceLink: $"{destination}#page={content.PageNumber}",
+                        vectors: vectors
+                    );
+
+                    EDGARknowledgeBaseItems.Add(EDGARknowledgeBaseItem);
+                }
+
+                stopwatch1.Stop();
+                _logger.LogInformation("Completed processing of page {PageNumber}, {SentenceCount} sentences. Time spent: {ElapsedMinutes} min {ElapsedSeconds} sec", content.PageNumber, sentences.Length, stopwatch1.Elapsed.Minutes, stopwatch1.Elapsed.Seconds);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error processing content for page {PageNumber}.", content.PageNumber);
+            }
+        }
 
         stopwatch2.Stop();
         _logger.LogInformation("Completed processing of all pages. Time spent: {ElapsedMinutes} min {ElapsedSeconds} sec", stopwatch2.Elapsed.Minutes, stopwatch2.Elapsed.Seconds);
 
         // Perform bulk upserts
         _logger.LogInformation("Starting bulk upsert of KnowledgeBaseItems.");
-        await _cosmosDbService.BulkTransactUpsertKnowledgeBaseItemsAsync( // BulkUpsertKnowledgeBaseItemsAsync //BulkTransactUpsertKnowledgeBaseItemsAsync
-            tenantId,
-            userId,
+        await _cosmosDbService.EDGARBulkTransactUpsertKnowledgeBaseItemsAsync( // BulkUpsertKnowledgeBaseItemsAsync //BulkTransactUpsertKnowledgeBaseItemsAsync
+            form,
+            ticker,
             "Document", // Category ID
-            knowledgeBaseItems,
+            EDGARknowledgeBaseItems,
             batchSize,
             betweenBatchDelayInMs,
             cancellationToken
@@ -455,6 +555,35 @@ public class DataLoader<TKey>(
                 idPrefix: fileNamePrefix,
                 tenantId: tenantId,
                 userId: userId,
+                categoryId: categoryId,
+                batchSize: batchSize,
+                betweenBatchDelayInMs: betweenBatchDelayInMs
+            );
+
+            _logger.LogInformation("Successfully completed deletion of PDF with prefix: {FileNamePrefix}", fileNamePrefix);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "An error occurred while deleting PDF with prefix: {FileNamePrefix}", fileNamePrefix);
+            throw;
+        }
+    }
+        public async Task DeletePdfEDGAR(
+          string form,
+          string ticker,
+          string fileNamePrefix,
+          string categoryId,
+          int batchSize = 100,
+          int betweenBatchDelayInMs = 100)
+    {
+        _logger.LogInformation("Starting deletion of PDF with prefix: {FileNamePrefix}", fileNamePrefix);
+
+        try
+        {
+            await _cosmosDbService.EDGARDeleteItemsByIdPrefixAsync(
+                idPrefix: fileNamePrefix,
+                form: form,
+                ticker: ticker,
                 categoryId: categoryId,
                 batchSize: batchSize,
                 betweenBatchDelayInMs: betweenBatchDelayInMs

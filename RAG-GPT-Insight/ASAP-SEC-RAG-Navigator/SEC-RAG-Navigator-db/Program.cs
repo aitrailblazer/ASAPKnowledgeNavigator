@@ -38,12 +38,17 @@ using Newtonsoft.Json;
 using BlingFire;
 using System.Linq;
 using System.Diagnostics;
+using System.Text.RegularExpressions;
 
 using Microsoft.Extensions.VectorData;
 using Microsoft.SemanticKernel.Connectors.InMemory;
 using Microsoft.SemanticKernel.Connectors.OpenAI;
 using Microsoft.SemanticKernel.Data;
 using Microsoft.SemanticKernel.Embeddings;
+using PuppeteerSharp;
+using System.IO;
+using Microsoft.Playwright;
+
 class Program
 {
 
@@ -79,12 +84,16 @@ class Program
     {
         Console.WriteLine("Usage:");
         Console.WriteLine("  SEC-RAG-Navigator create-container <containerName>");
+        Console.WriteLine("  SEC-RAG-Navigator create-container-edgar <containerName>");
         Console.WriteLine("  SEC-RAG-Navigator list-containers");
         Console.WriteLine("  SEC-RAG-Navigator rag-chat-service");
         Console.WriteLine("  SEC-RAG-Navigator rag-chat-service-cohere");
+        Console.WriteLine("  SEC-RAG-Navigator rag-chat-service-cohere-edgar");
         Console.WriteLine("  SEC-RAG-Navigator rag-chat-service-delete");
+        Console.WriteLine("  SEC-RAG-Navigator rag-chat-service-delete-edgar");
         Console.WriteLine("  SEC-RAG-Navigator knowledge-base-search \"<promptText>\"");
         Console.WriteLine("  SEC-RAG-Navigator knowledge-base-rag-search \"<promptText>\"");
+        Console.WriteLine("  SEC-RAG-Navigator knowledge-base-rag-search-edgar \"<promptText>\"");
         Console.WriteLine("  SEC-RAG-Navigator knowledge-base-rag-rerank-search \"<promptText>\"");
         Console.WriteLine("  SEC-RAG-Navigator phi-3.5-moe-instruct");
         Console.WriteLine("  SEC-RAG-Navigator phi-3.5-moe-instruct-streaming");
@@ -151,11 +160,13 @@ class Program
                         string azureCosmosDbEndpointUri = GetEnvironmentVariable("COSMOS_DB_ENDPOINT");
                         string AzureCosmosDBNoSQLDatabaseName = "asapdb";
                         string knowledgeBaseContainerName = "secrag"; // rag
+                        string knowledgeBaseContainerName2 = "edgar"; // rag
 
                         return new CosmosDbService(
                             endpoint: azureCosmosDbEndpointUri ?? string.Empty,
                             databaseName: AzureCosmosDBNoSQLDatabaseName ?? string.Empty,
                             knowledgeBaseContainerName: knowledgeBaseContainerName ?? string.Empty,
+                            knowledgeBaseContainerName2: knowledgeBaseContainerName2 ?? string.Empty,
                             logger: logger // Pass the logger to the constructor
                         );
                     }
@@ -361,6 +372,19 @@ public class SEC_RAG_NavigatorService
                     1024
                 );
             }
+            else if (command == "create-container-edgar" && args.Length >= 2)
+            {
+                string containerName = args[1];
+                List<string> partitionKeyPaths = new List<string> { "/form", "/ticker", "/categoryId" };
+                await _cosmosDbServiceWorking.CreateDatabaseAsync();
+                await _cosmosDbServiceWorking.CreateContainerAsync(
+                    containerName,
+                    "/vectors",
+                    partitionKeyPaths,
+                    new List<string> { "/*" },
+                    1024
+                );
+            }
             else if (command == "list-containers")
             {
                 await _cosmosDbServiceWorking.ListDatabasesAndContainersAsync();
@@ -377,11 +401,23 @@ public class SEC_RAG_NavigatorService
                 string userID = "5678";
                 await _cosmosDbServiceWorking.HandleCohereInputFileFromPath(tenantID, userID);
             }
+            else if (command == "rag-chat-service-cohere-edgar")
+            {
+                string form = "10-K";
+                string ticker = "TSLA";
+                await _cosmosDbServiceWorking.HandleCohereEDGARInputFileFromPath(form, ticker);
+            }
             else if (command == "rag-chat-service-delete")
             {
                 string tenantID = "1234";
                 string userID = "5678";
                 await _cosmosDbServiceWorking.DeleteRag(tenantID, userID);
+            }
+            else if (command == "rag-chat-service-delete-edgar")
+            {
+                string form = "10-K";
+                string ticker = "TSLA";
+                await _cosmosDbServiceWorking.DeleteRag(form, ticker);
             }
             else if (command == "knowledge-base-search" && args.Length >= 2)
             {
@@ -396,6 +432,25 @@ public class SEC_RAG_NavigatorService
                 await _cosmosDbServiceWorking.HandleKnowledgeBaseCompletionCommandAsync(
                     tenantId: tenantID,
                     userId: userID,
+                    categoryId: "Document", // Example category
+                    promptText: promptText,
+                    similarityScore: 0.7 // Default similarity score
+                );
+            }
+            else if (command == "knowledge-base-rag-search-edgar" && args.Length >= 2)
+            {
+                // Retrieve the prompt text (e.g., "Risk factors")
+                string promptText = args[1];
+
+                string form = "10-K";
+                string ticker = "TSLA";
+                string company = "Tesla";
+
+                // Call the knowledge base search handler
+                await _cosmosDbServiceWorking.HandleKnowledgeBaseRAGCommandEDGARAsync(
+                    form: form,
+                    ticker: ticker,
+                    company: company,
                     categoryId: "Document", // Example category
                     promptText: promptText,
                     similarityScore: 0.7 // Default similarity score
@@ -487,12 +542,16 @@ public class SEC_RAG_NavigatorService
     {
         Console.WriteLine("Usage:");
         Console.WriteLine("  SEC-RAG-Navigator create-container <containerName>");
+        Console.WriteLine("  SEC-RAG-Navigator create-container-edgar <containerName>");
         Console.WriteLine("  SEC-RAG-Navigator list-containers");
         Console.WriteLine("  SEC-RAG-Navigator rag-chat-service");
         Console.WriteLine("  SEC-RAG-Navigator rag-chat-service-cohere");
+        Console.WriteLine("  SEC-RAG-Navigator rag-chat-service-cohere-edgar");
         Console.WriteLine("  SEC-RAG-Navigator rag-chat-service-delete");
+        Console.WriteLine("  SEC-RAG-Navigator rag-chat-service-delete-edgar");
         Console.WriteLine("  SEC-RAG-Navigator knowledge-base-search \"<promptText>\"");
         Console.WriteLine("  SEC-RAG-Navigator knowledge-base-rag-search \"<promptText>\"");
+        Console.WriteLine("  SEC-RAG-Navigator knowledge-base-rag-search-edgar \"<promptText>\"");
         Console.WriteLine("  SEC-RAG-Navigator knowledge-base-rag-rerank-search \"<promptText>\"");
         Console.WriteLine("  SEC-RAG-Navigator phi-3.5-moe-instruct");
         Console.WriteLine("  SEC-RAG-Navigator phi-3.5-moe-instruct-streaming");
@@ -741,6 +800,45 @@ public class CosmosDbServiceWorking
 
         return $"Successfully processed file: {fileName}";
     }
+    public async Task<string> HandleCohereEDGARInputFileFromPath(
+            string form,
+            string ticker)
+    {
+
+        var filePath = "tsla-20231231.pdf";
+
+        // Generate a memoryKey based on tenantID, userID, and fileName
+        var fileName = "tsla-20231231.pdf";
+        var memoryKey = $"{form}-{ticker}-{fileName}";
+        Console.WriteLine($"HandleInputFileFromPath memoryKey: {memoryKey}");
+
+        try
+        {
+            // Call ProcessPdfAsync directly
+            Console.WriteLine($"Calling ProcessPdfAsync for {filePath}");
+            await _ragChatService.ProcessPdfCohereEDGARAsync(
+                form,
+                ticker,
+                fileName,
+                filePath,
+                memoryKey,
+                CancellationToken.None);
+
+            Console.WriteLine("ProcessPdfAsync completed successfully");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error in HandleInputFileFromPath: {ex}");
+            throw;
+        }
+        finally
+        {
+
+            Console.WriteLine($"HandleInputFileFromPath completed");
+        }
+
+        return $"Successfully processed file: {fileName}";
+    }
 
     public async Task<string> DeleteRag(
          string tenantID,
@@ -780,6 +878,43 @@ public class CosmosDbServiceWorking
 
         return $"Successfully DeleteRag file: {fileName}";
     }
+    public async Task<string> DeleteRagEDGAR(
+          string form,
+          string ticker)
+    {
+
+        // Generate a memoryKey based on tenantID, userID, and fileName
+        var fileName = "tsla-20231231.pdf";
+
+        var memoryKey = $"{form}-{ticker}-{fileName}";
+
+        var categoryId = "Document";
+        try
+        {
+            // Call ProcessPdfAsync directly
+            Console.WriteLine($"Calling ProcessPdfAsync for {fileName}");
+            await _ragChatService.DeleteEDGARPdfAsync(
+                form,
+                ticker,
+                memoryKey,
+                categoryId);
+
+            Console.WriteLine("DeletePdfAsync completed successfully");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error in DeleteRag: {ex}");
+            throw;
+        }
+        finally
+        {
+
+            Console.WriteLine($"DeleteRag completed");
+        }
+
+        return $"Successfully DeleteRag file: {fileName}";
+    }
+
 
     /// <summary>
     /// Handles the Knowledge Base Completion Command asynchronously.
@@ -828,31 +963,101 @@ public class CosmosDbServiceWorking
     }
 
     public async Task HandleKnowledgeBaseRAGCommandAsync(
-           string tenantId,
-           string userId,
-           string categoryId,
-           string promptText,
-           double similarityScore)
+        string tenantId,
+        string userId,
+        string categoryId,
+        string promptText,
+        double similarityScore)
     {
-
-        Console.WriteLine("Calling GetKnowledgeBaseCompletionAsync...");
+        Console.WriteLine("Calling HandleKnowledgeBaseRAGCommandAsync...");
 
         try
         {
             var stopwatch = Stopwatch.StartNew();
 
-            var (completion, title) = await _chatService.GetKnowledgeBaseCompletionRAGInt8Async( // GetKnowledgeBaseCompletionAsync GetKnowledgeBaseCompletionInt8Async
+            // Get the CohereResponse object from the service
+            CohereResponse cohereResponse = await _chatService.GetKnowledgeBaseCompletionRAGInt8Async(
                 tenantId: tenantId,
                 userId: userId,
                 categoryId: categoryId,
+                ticker: "TSLA",
+                company: "Tesla",
+                form: "10-K",
                 promptText: promptText,
                 similarityScore: similarityScore);
+            // Pretty-print the response as JSON
+            string prettyJson = JsonConvert.SerializeObject(cohereResponse, Formatting.Indented);
 
-            //Console.WriteLine($"Completion Title: {title ?? "No Title"}");
-            //Console.WriteLine($"Completion Text:\n{completion}");
+            // Log or display the JSON
+            _logger.LogInformation("CohereResponse (Pretty JSON):\n{PrettyJson}", prettyJson);
+
+            // Log everything in the response
+            LogCohereResponse(cohereResponse);
+
+            // Extract data from CohereResponse
+            string nonCitedResponse = cohereResponse.GeneratedCompletion;
+
+            // Map citations
+            var citations = cohereResponse.Citations?.Select(c => new Citation
+            {
+                Start = c.Start,
+                End = c.End,
+                Text = c.Text,
+                Sources = c.Sources?.Select(s => new Source
+                {
+                    Type = s.Type,
+                    Id = s.Id,
+                    Document = s.Document != null ? new Document
+                    {
+                        Id = s.Document.Id,
+                        //Title = s.Document.Title,
+                        Snippet = s.Document.Snippet
+                    } : null
+                }).ToList()
+            }).ToList() ?? new List<Cosmos.Copilot.Models.Citation>();
+
+            // Generate markdown, HTML snippet, and full HTML page responses
+            // Generate the responses
+            (string markdownResponse, string htmlResponse, string fullHtmlPage, byte[] pdfBytes) = await GenerateResponse(
+                nonCitedResponse: nonCitedResponse,
+                citations: citations,
+                promptText: promptText,
+                form: "10-K",
+                ticker: "TSLA",
+                company: "Tesla"
+            );
+
+            // Define the file path to save the PDF
+            string pdfFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, $"{"TSLA"}_{"10-K"}_Report.pdf");
+            File.WriteAllBytes(pdfFilePath, pdfBytes);
+
+            // Log the PDF file path
+            _logger.LogInformation("PDF successfully saved at: {PdfFilePath}", pdfFilePath);
+            Console.WriteLine($"PDF successfully saved at: {pdfFilePath}");
+
+            // Log the responses
+            _logger.LogInformation("Markdown Response:\n{MarkdownResponse}", markdownResponse);
+            _logger.LogInformation("HTML Snippet Response:\n{HtmlResponse}", htmlResponse);
+            _logger.LogInformation("Full HTML Page:\n{FullHtmlPage}", fullHtmlPage);
+
+            // Optionally, return or display the responses
+            Console.WriteLine("Markdown Response:");
+            Console.WriteLine(markdownResponse);
+
+            Console.WriteLine("\nHTML Snippet Response:");
+            Console.WriteLine(htmlResponse);
+
+            Console.WriteLine("\nFull HTML Page:");
+            Console.WriteLine(fullHtmlPage);
+
+            // Save the full HTML page to a file (optional)
+            string filePath = "GeneratedReport.html";
+            File.WriteAllText(filePath, fullHtmlPage);
+            Console.WriteLine($"\nFull HTML page saved to: {filePath}");
+
             stopwatch.Stop();
-            _logger.LogInformation("GetKnowledgeBaseCompletionRAGInt8Async: Time spent: {ElapsedMinutes} min {ElapsedSeconds} sec", stopwatch.Elapsed.Minutes, stopwatch.Elapsed.Seconds);
-
+            _logger.LogInformation("HandleKnowledgeBaseRAGCommandAsync: Time spent: {ElapsedMinutes} min {ElapsedSeconds} sec",
+                stopwatch.Elapsed.Minutes, stopwatch.Elapsed.Seconds);
         }
         catch (Exception ex)
         {
@@ -860,6 +1065,329 @@ public class CosmosDbServiceWorking
             Console.WriteLine($"Error: {ex.Message}");
         }
     }
+    public async Task HandleKnowledgeBaseRAGCommandEDGARAsync(
+        string form,
+        string ticker,
+        string company,
+        string categoryId,
+        string promptText,
+        double similarityScore)
+    {
+        Console.WriteLine("Calling HandleKnowledgeBaseRAGCommandEDGARAsync...");
+
+        try
+        {
+            var stopwatch = Stopwatch.StartNew();
+            // Get the CohereResponse object from the service
+            CohereResponse cohereResponse = await _chatService.GetKnowledgeBaseCompletionRAGfloat32EDGARAsync(
+                form: form,
+                ticker: ticker,
+                company: company,
+                categoryId: categoryId,
+                promptText: promptText,
+                similarityScore: similarityScore);
+            // Pretty-print the response as JSON
+            string prettyJson = JsonConvert.SerializeObject(cohereResponse, Formatting.Indented);
+
+            // Log or display the JSON
+            _logger.LogInformation("CohereResponse (Pretty JSON):\n{PrettyJson}", prettyJson);
+
+            // Log everything in the response
+            LogCohereResponse(cohereResponse);
+
+            // Extract data from CohereResponse
+            string nonCitedResponse = cohereResponse.GeneratedCompletion;
+
+            // Map citations
+            var citations = cohereResponse.Citations?.Select(c => new Citation
+            {
+                Start = c.Start,
+                End = c.End,
+                Text = c.Text,
+                Sources = c.Sources?.Select(s => new Source
+                {
+                    Type = s.Type,
+                    Id = s.Id,
+                    Document = s.Document != null ? new Document
+                    {
+                        Id = s.Document.Id,
+                        //Title = s.Document.Title,
+                        Snippet = s.Document.Snippet
+                    } : null
+                }).ToList()
+            }).ToList() ?? new List<Cosmos.Copilot.Models.Citation>();
+
+            // Generate markdown, HTML snippet, and full HTML page responses
+            // Generate the responses
+            (string markdownResponse, string htmlResponse, string fullHtmlPage, byte[] pdfBytes) = await GenerateResponse(
+                nonCitedResponse: nonCitedResponse,
+                citations: citations,
+                promptText: promptText,
+                ticker: ticker,
+                company: company,
+                form: form
+            );
+
+            // Define the file path to save the PDF
+            string pdfFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, $"{ticker}_{form}_Report.pdf");
+            File.WriteAllBytes(pdfFilePath, pdfBytes);
+
+            // Log the PDF file path
+            _logger.LogInformation("PDF successfully saved at: {PdfFilePath}", pdfFilePath);
+            Console.WriteLine($"PDF successfully saved at: {pdfFilePath}");
+
+            // Log the responses
+            _logger.LogInformation("Markdown Response:\n{MarkdownResponse}", markdownResponse);
+            _logger.LogInformation("HTML Snippet Response:\n{HtmlResponse}", htmlResponse);
+            _logger.LogInformation("Full HTML Page:\n{FullHtmlPage}", fullHtmlPage);
+
+            // Optionally, return or display the responses
+            Console.WriteLine("Markdown Response:");
+            Console.WriteLine(markdownResponse);
+
+            Console.WriteLine("\nHTML Snippet Response:");
+            Console.WriteLine(htmlResponse);
+
+            Console.WriteLine("\nFull HTML Page:");
+            Console.WriteLine(fullHtmlPage);
+
+            // Save the full HTML page to a file (optional)
+            string filePath = "GeneratedReport.html";
+            File.WriteAllText(filePath, fullHtmlPage);
+            Console.WriteLine($"\nFull HTML page saved to: {filePath}");
+
+            stopwatch.Stop();
+            _logger.LogInformation("HandleKnowledgeBaseRAGCommandAsync: Time spent: {ElapsedMinutes} min {ElapsedSeconds} sec",
+                stopwatch.Elapsed.Minutes, stopwatch.Elapsed.Seconds);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error occurred while calling GetKnowledgeBaseCompletionRAGInt8Async.");
+            Console.WriteLine($"Error: {ex.Message}");
+        }
+    }
+
+
+    private async Task<(string markdownResponse, string htmlResponse, string fullHtmlPage, byte[] pdfBytes)> GenerateResponse(
+        string nonCitedResponse,
+        List<Cosmos.Copilot.Models.Citation> citations,
+        string promptText,
+        string ticker,
+        string company,
+        string form,
+        int year = 2024,
+        string textColor = "#2C3E50",
+        string linkColor = "#2980B9",
+        string fontFamily = "Arial, sans-serif",
+        string lineHeight = "1.8")
+    {
+        // Remove page patterns like [Page 63, Page 94, ...]
+
+        // Extract the title from the response (assumes the title starts with "## ")
+        var titleMatch = Regex.Match(nonCitedResponse, @"##\s*(.+)");
+        string title = titleMatch.Success ? titleMatch.Groups[1].Value.Trim() : "Generated Report";
+
+        // Add company, ticker, form, and year to the title
+        string fullTitle = $"{title} | {company} ({ticker}) - {form} {year}";
+
+        // Initialize markdown response
+        string markdownResponse = nonCitedResponse;
+        int offset = 0;
+
+        // Process citations
+        foreach (var citation in citations)
+        {
+            if (citation.Start < 0 || citation.Start >= nonCitedResponse.Length ||
+                citation.End <= citation.Start || citation.End > nonCitedResponse.Length)
+            {
+                continue; // Skip invalid citation ranges
+            }
+
+            int start = citation.Start + offset;
+            int end = citation.End + offset;
+            string text = citation.Text;
+
+            // Generate links from document sources
+            string docLinks = string.Join(", ", citation.Sources?
+                .Select(source => source.Document?.Title)
+                .Where(title => !string.IsNullOrEmpty(title)) ?? Enumerable.Empty<string>());
+
+            string replacement = $"{text} [{docLinks}]";
+
+            if (start >= 0 && start < markdownResponse.Length && end <= markdownResponse.Length)
+            {
+                markdownResponse = markdownResponse.Substring(0, start) + replacement + markdownResponse.Substring(end);
+                offset += replacement.Length - text.Length; // Adjust offset
+            }
+        }
+
+        // Format Markdown into HTML (bold, lists, and line breaks)
+        string formattedResponse = FormatMarkdownToHtml(markdownResponse);
+        formattedResponse = Regex.Replace(formattedResponse, @"\[\]", string.Empty);
+
+        // Create HTML response (snippet)
+        string htmlResponse = $@"
+    <div style=""color:{textColor}; font-family:{fontFamily}; line-height:{lineHeight};"">
+        <h1 style=""color:{linkColor};"">{fullTitle}</h1>
+        <p>Powered by <strong>ASAP Knowledge Navigator for EDGAR</strong></p>
+
+        <div class=""prompt-text"">
+            <h3>Prompt Text:</h3>
+            <p>{promptText}</p>
+        </div>
+        {formattedResponse}
+    </div>";
+
+        // Create full HTML page with footer and prompt text
+        string fullHtmlPage = $@"
+    <!DOCTYPE html>
+    <html lang=""en"">
+    <head>
+        <meta charset=""UTF-8"">
+        <meta name=""viewport"" content=""width=device-width, initial-scale=1.0"">
+        <title>{fullTitle}</title>
+        <style>
+            body {{ font-family: {fontFamily}; line-height: {lineHeight}; color: {textColor}; margin: 20px; }}
+            h1 {{ color: {linkColor}; font-size: 24px; text-align: center; }}
+            a {{ color: {linkColor}; text-decoration: none; }}
+            a:hover {{ text-decoration: underline; }}
+            ul {{ margin-left: 20px; }}
+            footer {{ margin-top: 40px; text-align: center; font-size: 14px; color: #7F8C8D; }}
+            .prompt-text {{ margin-top: 30px; padding: 15px; background-color: #F8F9FA; border: 1px solid #DADDE1; border-radius: 5px; font-family: {fontFamily}; font-size: 14px; }}
+        </style>
+    </head>
+    <body>
+        {htmlResponse}
+        <footer>
+            <p>© {year} AITrailblazer. All rights reserved.</p>
+            <p>Powered by <strong>ASAP Knowledge Navigator for EDGAR</strong></p>
+        </footer>
+    </body>
+    </html>";
+
+        byte[] pdfBytes;
+        string pdfFilePath = Path.Combine(Directory.GetCurrentDirectory(), $"{fullTitle.Replace(' ', '_').Replace('|', '-')}.pdf");
+
+        _logger.LogInformation($"Saving PDF to: {pdfFilePath}");
+
+        using (var playwright = await Playwright.CreateAsync())
+        {
+            await using var browser = await playwright.Chromium.LaunchAsync(new BrowserTypeLaunchOptions { Headless = true });
+            var page = await browser.NewPageAsync();
+
+            // Set the full HTML page content
+            await page.SetContentAsync(fullHtmlPage);
+
+            // Save PDF to file
+            await page.PdfAsync(new PagePdfOptions { Path = pdfFilePath, Format = "A4" });
+
+            // Generate PDF bytes
+            pdfBytes = await page.PdfAsync(new PagePdfOptions { Format = "A4" });
+        }
+
+        return (markdownResponse, htmlResponse, fullHtmlPage, pdfBytes);
+    }
+
+    // Helper method to format Markdown to HTML
+    private string FormatMarkdownToHtml(string text)
+    {
+        // Convert Markdown headers (## text) to HTML h2
+        text = Regex.Replace(text, @"##\s*(.+)", @"<h2>$1</h2>");
+
+        // Convert Markdown bold (**text**) to HTML bold (<strong>)
+        text = Regex.Replace(text, @"\*\*(.+?)\*\*", @"<strong>$1</strong>");
+
+        // Convert Markdown lists (- item) to HTML unordered lists
+        // First, wrap each list item in <li>
+        text = Regex.Replace(text, @"(?m)^- (.+)", @"<li>$1</li>");
+
+        // Then, wrap all consecutive <li> tags in a <ul>
+        text = Regex.Replace(text, @"(<li>.+?</li>\s*)+", match => $"<ul>{match.Value}</ul>");
+
+        // Replace new lines with <br> for proper HTML rendering, but only outside of lists
+        var lines = text.Split('\n');
+        for (int i = 0; i < lines.Length; i++)
+        {
+            if (!lines[i].Contains("<li>") && !lines[i].Contains("</ul>"))
+            {
+                lines[i] = lines[i].Replace("</h2>", "</h2><br>");
+            }
+        }
+        text = string.Join("\n", lines);
+
+        // Remove extra Markdown symbols or artifacts
+        // Note: Be careful with this, as it might remove needed asterisks inside HTML tags
+        text = Regex.Replace(text, @"(?<!<strong>)\*(?!</strong>)", "");
+
+        return text;
+    }
+
+    private void LogCohereResponse(CohereResponse cohereResponse)
+    {
+        if (cohereResponse == null)
+        {
+            _logger.LogWarning("CohereResponse is null.");
+            return;
+        }
+
+        // Log top-level properties
+        _logger.LogInformation("Generated Completion:\n{GeneratedCompletion}", cohereResponse.GeneratedCompletion ?? "No completion provided.");
+        _logger.LogInformation("Finish Reason: {FinishReason}", cohereResponse.FinishReason ?? "No finish reason provided.");
+
+        if (cohereResponse.Usage != null)
+        {
+            _logger.LogInformation("Usage Details:");
+            _logger.LogInformation("  - Input Tokens: {InputTokens}", cohereResponse.Usage.InputTokens);
+            _logger.LogInformation("  - Output Tokens: {OutputTokens}", cohereResponse.Usage.OutputTokens);
+            _logger.LogInformation("  - Total Tokens: {TotalTokens}", cohereResponse.Usage.TotalTokens);
+        }
+        else
+        {
+            _logger.LogWarning("Usage data is not available.");
+        }
+
+        // Log citations
+        if (cohereResponse.Citations != null && cohereResponse.Citations.Any())
+        {
+            _logger.LogInformation("Citations:");
+            foreach (var citation in cohereResponse.Citations)
+            {
+                _logger.LogInformation("  Citation:");
+                _logger.LogInformation("    - Text: {Text}", citation.Text ?? "No text provided.");
+                _logger.LogInformation("    - Start: {Start}, End: {End}", citation.Start, citation.End);
+
+                if (citation.Sources != null && citation.Sources.Any())
+                {
+                    _logger.LogInformation("    Sources:");
+                    foreach (var source in citation.Sources)
+                    {
+                        _logger.LogInformation("      - Type: {Type}, ID: {Id}", source.Type ?? "Unknown", source.Id ?? "Unknown");
+
+                        if (source.Document != null)
+                        {
+                            _logger.LogInformation("        Document:");
+                            _logger.LogInformation("          - ID: {Id}", source.Document.Id ?? "Unknown");
+                            _logger.LogInformation("          - Title: {Title}", source.Document.Title ?? "No title provided.");
+                            _logger.LogInformation("          - Snippet: {Snippet}", source.Document.Snippet ?? "No snippet provided.");
+                        }
+                        else
+                        {
+                            _logger.LogWarning("        Document is null.");
+                        }
+                    }
+                }
+                else
+                {
+                    _logger.LogWarning("    No sources available for this citation.");
+                }
+            }
+        }
+        else
+        {
+            _logger.LogWarning("No citations provided.");
+        }
+    }
+
 
     public async Task HandleKnowledgeBaseRAGRerankAsync(
      string tenantId,
@@ -1335,7 +1863,7 @@ The output should be maximum of {{maxTokens}}. Try to fit it all in. Don't cut
                     Messages = messages,
                     MaxTokens = 100, // Limit response length
                     Temperature = 0.7f, // Adjust creativity
-                    //ResponseFormat = new ChatCompletionsResponseFormatJSON()
+                                        //ResponseFormat = new ChatCompletionsResponseFormatJSON()
                 };
 
                 string jsonmessages = Newtonsoft.Json.JsonConvert.SerializeObject(messages, Newtonsoft.Json.Formatting.Indented);

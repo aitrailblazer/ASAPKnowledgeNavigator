@@ -466,157 +466,13 @@ Write a search query that will find helpful information for answering the user's
         }
     }
 
-    /*
-        public async Task<(string completion, string? title)> GetKnowledgeBaseCompletionRAGInt8AsyncOLD(
-         string tenantId,
-         string userId,
-         string categoryId,
-         string promptText,
-         double similarityScore)
-        {
-            var stopwatch = Stopwatch.StartNew();
-
-            try
-            {
-                // Validate inputs
-                ArgumentNullException.ThrowIfNull(tenantId, nameof(tenantId));
-                ArgumentNullException.ThrowIfNull(userId, nameof(userId));
-
-                // Initialize HttpClientHandler with custom certificate validation
-                using var handler = new HttpClientHandler
-                {
-                    ClientCertificateOptions = ClientCertificateOption.Manual,
-                    ServerCertificateCustomValidationCallback = (httpRequestMessage, cert, certChain, policyErrors) => true
-                };
-
-                using var client = new HttpClient(handler)
-                {
-                    //BaseAddress = new Uri(apiEndpoint),
-                    Timeout = TimeSpan.FromMinutes(5) // Increase timeout to 5 minutes
-                };
-
-
-                // Retrieve API key and endpoint from environment variables
-                string apiKey = Environment.GetEnvironmentVariable("COHERE_EMBED_KEY");
-                string apiEndpoint = Environment.GetEnvironmentVariable("COHERE_EMBED_ENDPOINT");
-                if (string.IsNullOrEmpty(apiKey) || string.IsNullOrEmpty(apiEndpoint))
-                {
-                    throw new InvalidOperationException("API key or endpoint is not configured.");
-                }
-
-                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
-                client.DefaultRequestHeaders.Add("extra-parameters", "pass-through"); // Add this header                client.BaseAddress = new Uri(apiEndpoint);
-                client.BaseAddress = new Uri(apiEndpoint);
-                string[] queries = await HandleCohereQueryGenerationAsync(promptText);
-
-                // Generate embeddings for the prompt
-                var queryRequestBody = new
-                {
-                    input = queries,
-                    model = "embed-english-v3.0",
-                    embeddingTypes = new[] { "int8" }, //
-                    input_type = "query" // document query
-                };
-
-                string requestBodyJson = JsonConvert.SerializeObject(queryRequestBody, Formatting.Indented);
-                var content = new StringContent(requestBodyJson, Encoding.UTF8, "application/json");
-                HttpResponseMessage response = await client.PostAsync("/embeddings", content).ConfigureAwait(false);
-
-                if (!response.IsSuccessStatusCode)
-                {
-                    string errorDetails = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
-                    _logger.LogError("Embedding request failed with status {StatusCode}: {ErrorDetails}", response.StatusCode, errorDetails);
-                    return ($"Embedding request failed: {response.StatusCode}", null);
-                }
-
-                string result = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
-                var parsedResult = JsonConvert.DeserializeObject<dynamic>(result);
-                float[] promptVectors = parsedResult.data[0]?.embedding?.ToObject<List<float>>()?.ToArray();
-
-                // Generate keywords from promptText
-                string[] searchTerms = GenerateKeywords(promptText);
-
-                // Search for knowledge base items
-                List<KnowledgeBaseItem> items = await _cosmosDbService.SearchKnowledgeBaseInt8Async(
-                    vectors: promptVectors,
-                    tenantId: tenantId,
-                    userId: userId,
-                    categoryId: categoryId,
-                    similarityScore: similarityScore,
-                    searchTerms: searchTerms
-                );
-
-                if (items == null || items.Count == 0)
-                {
-                    _logger.LogInformation("No similar knowledge base items found.");
-                    return (string.Empty, null);
-                }
-
-                // Prepare documents list
-                var documents = items.Select(item => new
-                {
-                    data = new
-                    {
-                        title = item?.Title ?? string.Empty,
-                        snippet = item?.Content ?? string.Empty
-                    }
-                }).ToList();
-
-                // Log the documents
-                string documentsJson = JsonConvert.SerializeObject(documents, Formatting.Indented);
-                _logger.LogInformation("Documents prepared: {Documents}", documentsJson);
-
-                // Prepare the request for chat completions
-                var chatRequestBody = new
-                {
-                    messages = new[]
-                    {
-                    new { role = "user", content = promptText }
-                },
-                    documents = documents,
-                    max_tokens = 2048,
-                    temperature = 0.8,
-                    top_p = 0.1,
-                    frequency_penalty = 0,
-                    presence_penalty = 0,
-                    seed = 369
-                };
-
-                var requestJson = JsonConvert.SerializeObject(chatRequestBody);
-                content = new StringContent(requestJson, Encoding.UTF8, "application/json");
-                response = await client.PostAsync("chat/completions", content).ConfigureAwait(false);
-                _logger.LogInformation("response: {response}", response);
-
-                //if (!response.IsSuccessStatusCode)
-                //{
-                //    string errorDetails = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
-                //    _logger.LogError("Chat completion request failed with status {StatusCode}: {ErrorDetails}", response.StatusCode, errorDetails);
-                //    return ($"Chat completion request failed: {response.StatusCode}", null);
-                //}
-
-                //string chatResult = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
-                //var responseObject = JsonConvert.DeserializeObject<dynamic>(chatResult);
-                //string generatedCompletion = responseObject?.choices?[0]?.message?.content ?? "No completion generated.";
-
-                // Log the completion
-                //
-                // Return the combined result and title of the first item
-                stopwatch.Stop();
-                _logger.LogInformation("GetKnowledgeBaseCompletionRAGInt8Async: Time spent: {ElapsedMinutes} min {ElapsedSeconds} sec", stopwatch.Elapsed.Minutes, stopwatch.Elapsed.Seconds);
-                return ("", "");
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error generating knowledge base completion.");
-                throw;
-            }
-        }
-        */
-    /*
-    public async Task<(string completion, string? title)> GetKnowledgeBaseCompletionRAGInt8AsyncOLD1(
+    public async Task<CohereResponse> GetKnowledgeBaseCompletionRAGInt8Async(
         string tenantId,
         string userId,
         string categoryId,
+        string ticker,
+        string company,
+        string form,
         string promptText,
         double similarityScore)
     {
@@ -628,141 +484,10 @@ Write a search query that will find helpful information for answering the user's
             ArgumentNullException.ThrowIfNull(tenantId, nameof(tenantId));
             ArgumentNullException.ThrowIfNull(userId, nameof(userId));
 
-            // Retrieve API key and endpoint from environment variables
-            string apiKey = Environment.GetEnvironmentVariable("COHERE_EMBED_KEY");
-            string apiEndpoint = Environment.GetEnvironmentVariable("COHERE_EMBED_ENDPOINT");
-
-            if (string.IsNullOrWhiteSpace(apiKey) || string.IsNullOrWhiteSpace(apiEndpoint))
-            {
-                throw new InvalidOperationException("API key or endpoint is not configured.");
-            }
-
-            // Initialize HttpClientHandler with custom certificate validation
-            using var handler = new HttpClientHandler
-            {
-                ClientCertificateOptions = ClientCertificateOption.Manual,
-                ServerCertificateCustomValidationCallback = (httpRequestMessage, cert, certChain, policyErrors) => true
-            };
-            using var client = new HttpClient(handler)
-            {
-                Timeout = TimeSpan.FromMinutes(5) // Increase timeout to 5 minutes
-            };
-
-            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
-            client.DefaultRequestHeaders.Add("extra-parameters", "pass-through");
-            client.BaseAddress = new Uri(apiEndpoint);
-
+            // Generate queries from the prompt text
             string[] queries = await HandleCohereQueryGenerationAsync(promptText);
-            _logger.LogInformation($"queries: {string.Join(", ", queries)}");
+            _logger.LogInformation("Generated Queries: {Queries}", string.Join(", ", queries));
 
-            // Generate embeddings for the prompt
-
-            var queryRequestBody = new
-            {
-                input = queries,
-                model = "embed-english-v3.0",
-                embeddingTypes = new[] { "float32" }, // int8
-                input_type = "query" // document query
-            };
-
-            string requestBodyJson = JsonConvert.SerializeObject(queryRequestBody, Formatting.Indented);
-            var content = new StringContent(requestBodyJson, Encoding.UTF8, "application/json");
-
-            HttpResponseMessage response = await client.PostAsync("/embeddings", content).ConfigureAwait(false);
-
-            if (!response.IsSuccessStatusCode)
-            {
-                string errorDetails = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
-                _logger.LogError("Embedding request failed with status {StatusCode}: {ErrorDetails}", response.StatusCode, errorDetails);
-                return ($"Embedding request failed: {response.StatusCode}", null);
-            }
-
-            string result = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
-            var parsedResult = JsonConvert.DeserializeObject<dynamic>(result);
-
-            // Pretty print the JSON
-            string prettyJson = JsonConvert.SerializeObject(parsedResult, Formatting.Indented);
-            //Console.WriteLine("API Response (Pretty JSON):");
-            //Console.WriteLine(prettyJson);
-
-            // Loop through embeddings and collect results
-            var allItems = new List<KnowledgeBaseItem>();
-
-            foreach (var data in parsedResult?.data ?? new List<dynamic>())
-            {
-                float[] promptVectors = data?.embedding?.ToObject<List<float>>()?.ToArray();
-
-                if (promptVectors == null || promptVectors.Length == 0)
-                {
-                    _logger.LogWarning("No embeddings returned for one of the queries.");
-                    continue;
-                }
-                // Print the vectors to the console
-                //Console.WriteLine("promptVectors: " + string.Join(", ", promptVectors));
-
-                _logger.LogInformation("Searching for knowledge base items with vector length: {VectorLength}", promptVectors.Length);
-
-                List<KnowledgeBaseItem> items = await _cosmosDbService.SearchKnowledgeBaseInt8QueriesAsync(
-                    vectors: promptVectors,
-                    tenantId: tenantId,
-                    userId: userId,
-                    categoryId: categoryId
-                );
-
-                if (items?.Count > 0)
-                {
-                    allItems.AddRange(items);
-                }
-            }
-
-            if (allItems == null || allItems.Count == 0)
-            {
-                _logger.LogInformation("No similar knowledge base items found.");
-                return ("No similar knowledge base items found.", null);
-            }
-            _logger.LogInformation($"Similar knowledge base items found: {allItems.Count}");
-
-            // Deduplicate items based on ID (optional)
-            var uniqueItems = allItems.GroupBy(item => item.Id).Select(group => group.First()).ToList();
-
-            // Send the request to Cohere for RAG Completion
-            (string completion, string citations) = await SendCohereRAGCompletionRequestAsync(uniqueItems, promptText);
-
-            // Log the completion text and citations
-            _logger.LogInformation("Completion: {Completion}", completion);
-
-            stopwatch.Stop();
-            _logger.LogInformation("GetKnowledgeBaseCompletionRAGInt8Async: Time spent: {ElapsedMinutes} min {ElapsedSeconds} sec", stopwatch.Elapsed.Minutes, stopwatch.Elapsed.Seconds);
-
-            // Return the completion and the title of the first item
-            return (completion, uniqueItems.FirstOrDefault()?.Title);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error generating knowledge base completion.");
-            throw;
-        }
-    }
-    */
-
-    public async Task<(string completion, string? title)> GetKnowledgeBaseCompletionRAGInt8Async(
-       string tenantId,
-       string userId,
-       string categoryId,
-       string promptText,
-       double similarityScore)
-    {
-        var stopwatch = Stopwatch.StartNew();
-
-        try
-        {
-            // Validate inputs
-            ArgumentNullException.ThrowIfNull(tenantId, nameof(tenantId));
-            ArgumentNullException.ThrowIfNull(userId, nameof(userId));
-
-
-            string[] queries = await HandleCohereQueryGenerationAsync(promptText);
-            _logger.LogInformation($"queries: {string.Join(", ", queries)}");
             var allItems = new List<KnowledgeBaseItem>();
 
             foreach (var query in queries)
@@ -785,17 +510,17 @@ Write a search query that will find helpful information for answering the user's
 
                 using var client = new HttpClient(handler)
                 {
-                    Timeout = TimeSpan.FromMinutes(5) // Increase timeout to 5 minutes
+                    BaseAddress = new Uri(apiEndpoint),
+                    Timeout = TimeSpan.FromMinutes(5) // Increase timeout
                 };
 
                 client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
-                client.DefaultRequestHeaders.Add("extra-parameters", "pass-through"); // Add this header                client.BaseAddress = new Uri(apiEndpoint);
-                client.BaseAddress = new Uri(apiEndpoint);
+                client.DefaultRequestHeaders.Add("extra-parameters", "pass-through");
 
-                // Generate embeddings for the prompt
+                // Prepare embedding request
                 var queryRequestBody = new
                 {
-                    input = new[] { promptText },
+                    input = new[] { query },
                     model = "embed-english-v3.0",
                     embeddingTypes = new[] { "float32" },
                     input_type = "query"
@@ -804,33 +529,30 @@ Write a search query that will find helpful information for answering the user's
                 string requestBodyJson = JsonConvert.SerializeObject(queryRequestBody, Formatting.Indented);
                 var content = new StringContent(requestBodyJson, Encoding.UTF8, "application/json");
 
+                // Send the embedding request
                 HttpResponseMessage response = await client.PostAsync("/embeddings", content).ConfigureAwait(false);
 
                 if (!response.IsSuccessStatusCode)
                 {
                     string errorDetails = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
                     _logger.LogError("Embedding request failed with status {StatusCode}: {ErrorDetails}", response.StatusCode, errorDetails);
-                    return ("Embedding request failed.", null);
+                    continue; // Skip this query and continue with others
                 }
 
+                // Parse the embedding response
                 string result = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
-                var parsedResult = JsonConvert.DeserializeObject<dynamic>(result);
+                dynamic parsedResult = JsonConvert.DeserializeObject<dynamic>(result);
                 float[] promptVectors = parsedResult?.data?[0]?.embedding?.ToObject<List<float>>()?.ToArray();
-
-                //float[] promptVectors = await _semanticKernelService.GetEmbeddingsAsync(query);
 
                 if (promptVectors == null || promptVectors.Length == 0)
                 {
-                    _logger.LogWarning("No embeddings returned for one of the queries.");
+                    _logger.LogWarning("No embeddings returned for query: {Query}", query);
                     continue;
                 }
-                // Print the vectors to the console
-                //Console.WriteLine("promptVectors: " + string.Join(", ", promptVectors));
 
                 _logger.LogInformation("Searching for knowledge base items with vector length: {VectorLength}", promptVectors.Length);
-                // Generate keywords from promptText
-                //string[] searchTerms = GenerateKeywords(promptText);
 
+                // Search the knowledge base using the embeddings
                 List<KnowledgeBaseItem> items = await _cosmosDbService.SearchKnowledgeBaseAsync(
                     vectors: promptVectors,
                     tenantId: tenantId,
@@ -842,30 +564,57 @@ Write a search query that will find helpful information for answering the user's
                 {
                     allItems.AddRange(items);
                 }
+                string[] searchTerms = GenerateKeywords(query);
+                items = await _cosmosDbService.SearchLexicalKnowledgeBaseByTermsAsync(
+                              tenantId: tenantId,
+                              userId: userId,
+                              categoryId: categoryId,
+                              searchTerms: searchTerms
+                          );
+
+                if (items?.Count > 0)
+                {
+                    allItems.AddRange(items);
+                }
             }
 
-            if (allItems == null || allItems.Count == 0)
+            if (allItems.Count == 0)
             {
                 _logger.LogInformation("No similar knowledge base items found.");
-                return ("No similar knowledge base items found.", null);
+                return new CohereResponse
+                {
+                    GeneratedCompletion = "No similar knowledge base items found.",
+                    Citations = new List<Cosmos.Copilot.Models.Citation>()
+                };
             }
-            _logger.LogInformation($"Similar knowledge base items found: {allItems.Count}");
 
-            // Deduplicate items based on ID (optional)
+            _logger.LogInformation("Similar knowledge base items found: {Count}", allItems.Count);
+
+            // Deduplicate and rerank items
             var uniqueItems = allItems.GroupBy(item => item.Id).Select(group => group.First()).ToList();
-            //var reorderedItems = await SendCohereRAGRerankRequestItemsAsync(uniqueItems, promptText);
+            var reorderedItems = await SendCohereRAGRerankRequestItemsAsync(uniqueItems, promptText);
+            _logger.LogInformation("Reordered Items:\n{ReorderedItems}", JsonConvert.SerializeObject(reorderedItems, Formatting.Indented));
 
             // Send the request to Cohere for RAG Completion
-            (string completion, string citations) = await SendCohereRAGCompletionRequestAsync(uniqueItems, promptText);
+            CohereResponse cohereResponse = await SendCohereRAGCompletionRequestAsync(
+                ticker,
+                company,
+                form,
+                reorderedItems,
+                promptText);
 
-            // Log the completion text and citations
-            _logger.LogInformation("Completion: {Completion}", completion);
+            // Log the response
+            //_logger.LogInformation("Generated Completion: {Completion}", cohereResponse.GeneratedCompletion);
+            //_logger.LogInformation("Citations: {Citations}", cohereResponse.Citations != null
+            //    ? string.Join(", ", cohereResponse.Citations.Select(citation => citation.Text))
+            //    : "No citations provided.");
 
             stopwatch.Stop();
-            _logger.LogInformation("GetKnowledgeBaseCompletionRAGInt8Async: Time spent: {ElapsedMinutes} min {ElapsedSeconds} sec", stopwatch.Elapsed.Minutes, stopwatch.Elapsed.Seconds);
+            _logger.LogInformation("GetKnowledgeBaseCompletionRAGInt8Async completed in {ElapsedMinutes} min {ElapsedSeconds} sec",
+                stopwatch.Elapsed.Minutes, stopwatch.Elapsed.Seconds);
 
-            // Return the completion and the title of the first item
-            return (completion, uniqueItems.FirstOrDefault()?.Title);
+            // Return the full CohereResponse object
+            return cohereResponse;
         }
         catch (Exception ex)
         {
@@ -873,6 +622,158 @@ Write a search query that will find helpful information for answering the user's
             throw;
         }
     }
+    public async Task<CohereResponse> GetKnowledgeBaseCompletionRAGfloat32EDGARAsync(
+        string form,
+        string ticker,
+        string company,
+        string categoryId,
+        string promptText,
+        double similarityScore)
+    {
+        var stopwatch = Stopwatch.StartNew();
+
+        try
+        {
+    
+            // Generate queries from the prompt text
+            string[] queries = await HandleCohereQueryGenerationAsync(promptText);
+            _logger.LogInformation("Generated Queries: {Queries}", string.Join(", ", queries));
+
+            var allItems = new List<EDGARKnowledgeBaseItem>();
+
+            foreach (var query in queries)
+            {
+                // Retrieve API key and endpoint from environment variables
+                string apiKey = Environment.GetEnvironmentVariable("COHERE_EMBED_KEY");
+                string apiEndpoint = Environment.GetEnvironmentVariable("COHERE_EMBED_ENDPOINT");
+
+                if (string.IsNullOrWhiteSpace(apiKey) || string.IsNullOrWhiteSpace(apiEndpoint))
+                {
+                    throw new InvalidOperationException("API key or endpoint is not configured.");
+                }
+
+                // Initialize HttpClientHandler with custom certificate validation
+                using var handler = new HttpClientHandler
+                {
+                    ClientCertificateOptions = ClientCertificateOption.Manual,
+                    ServerCertificateCustomValidationCallback = (_, _, _, _) => true
+                };
+
+                using var client = new HttpClient(handler)
+                {
+                    BaseAddress = new Uri(apiEndpoint),
+                    Timeout = TimeSpan.FromMinutes(5) // Increase timeout
+                };
+
+                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
+                client.DefaultRequestHeaders.Add("extra-parameters", "pass-through");
+
+                // Prepare embedding request
+                var queryRequestBody = new
+                {
+                    input = new[] { query },
+                    model = "embed-english-v3.0",
+                    embeddingTypes = new[] { "float32" },
+                    input_type = "query"
+                };
+
+                string requestBodyJson = JsonConvert.SerializeObject(queryRequestBody, Formatting.Indented);
+                var content = new StringContent(requestBodyJson, Encoding.UTF8, "application/json");
+
+                // Send the embedding request
+                HttpResponseMessage response = await client.PostAsync("/embeddings", content).ConfigureAwait(false);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    string errorDetails = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+                    _logger.LogError("Embedding request failed with status {StatusCode}: {ErrorDetails}", response.StatusCode, errorDetails);
+                    continue; // Skip this query and continue with others
+                }
+
+                // Parse the embedding response
+                string result = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+                dynamic parsedResult = JsonConvert.DeserializeObject<dynamic>(result);
+                float[] promptVectors = parsedResult?.data?[0]?.embedding?.ToObject<List<float>>()?.ToArray();
+
+                if (promptVectors == null || promptVectors.Length == 0)
+                {
+                    _logger.LogWarning("No embeddings returned for query: {Query}", query);
+                    continue;
+                }
+
+                _logger.LogInformation("Searching for knowledge base items with vector length: {VectorLength}", promptVectors.Length);
+
+                // Search the knowledge base using the embeddings
+                List<EDGARKnowledgeBaseItem> items = await _cosmosDbService.EDGARSearchKnowledgeBaseAsync(
+                    vectors: promptVectors,
+                    form: form,
+                    ticker: ticker,
+                    categoryId: categoryId
+                );
+
+                if (items?.Count > 0)
+                {
+                    allItems.AddRange(items);
+                }
+                string[] searchTerms = GenerateKeywords(query);
+                items = await _cosmosDbService.EDGARSearchLexicalKnowledgeBaseByTermsAsync(
+                              form: form,
+                              ticker: ticker,
+                              categoryId: categoryId,
+                              searchTerms: searchTerms
+                          );
+
+                if (items?.Count > 0)
+                {
+                    allItems.AddRange(items);
+                }
+            }
+
+            if (allItems.Count == 0)
+            {
+                _logger.LogInformation("No similar knowledge base items found.");
+                return new CohereResponse
+                {
+                    GeneratedCompletion = "No similar knowledge base items found.",
+                    Citations = new List<Cosmos.Copilot.Models.Citation>()
+                };
+            }
+
+            _logger.LogInformation("Similar knowledge base items found: {Count}", allItems.Count);
+
+            // Deduplicate and rerank items
+            var uniqueItems = allItems.GroupBy(item => item.Id).Select(group => group.First()).ToList();
+            var reorderedItems = await SendCohereRAGRerankEDGARRequestItemsAsync(uniqueItems, promptText);
+            _logger.LogInformation("Reordered Items:\n{ReorderedItems}", JsonConvert.SerializeObject(reorderedItems, Formatting.Indented));
+
+            // Send the request to Cohere for RAG Completion
+            CohereResponse cohereResponse = await SendCohereRAGCompletionEDGARRequestAsync(
+                form,
+                ticker,
+                company,
+                reorderedItems,
+                promptText);
+
+            // Log the response
+            //_logger.LogInformation("Generated Completion: {Completion}", cohereResponse.GeneratedCompletion);
+            //_logger.LogInformation("Citations: {Citations}", cohereResponse.Citations != null
+            //    ? string.Join(", ", cohereResponse.Citations.Select(citation => citation.Text))
+            //    : "No citations provided.");
+
+            stopwatch.Stop();
+            _logger.LogInformation("GetKnowledgeBaseCompletionRAGInt8Async completed in {ElapsedMinutes} min {ElapsedSeconds} sec",
+                stopwatch.Elapsed.Minutes, stopwatch.Elapsed.Seconds);
+
+            // Return the full CohereResponse object
+            return cohereResponse;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error generating knowledge base completion.");
+            throw;
+        }
+    }
+
 
     public async Task<List<KnowledgeBaseItem>> GetKnowledgeBaseRerankRAGInt8Async(
        string tenantId,
@@ -986,9 +887,12 @@ Write a search query that will find helpful information for answering the user's
     }
 
 
-    private async Task<(string generatedCompletion, string citations)> SendCohereRAGCompletionRequestAsync(
-        List<KnowledgeBaseItem> items,
-        string promptText)
+    private async Task<CohereResponse> SendCohereRAGCompletionRequestAsync(
+    string form,
+    string ticker,
+    string company,
+    List<KnowledgeBaseItem> items,
+       string promptText)
     {
         var stopwatch = Stopwatch.StartNew();
 
@@ -1001,7 +905,11 @@ Write a search query that will find helpful information for answering the user's
             if (string.IsNullOrWhiteSpace(apiKey) || string.IsNullOrWhiteSpace(apiEndpoint))
             {
                 _logger.LogError("API key or endpoint is not configured.");
-                return ("API key or endpoint is not configured.", "");
+                return new CohereResponse
+                {
+                    GeneratedCompletion = "API key or endpoint is not configured.",
+                    Citations = new List<Cosmos.Copilot.Models.Citation>()
+                };
             }
 
             // Initialize HttpClientHandler with custom certificate validation
@@ -1013,45 +921,45 @@ Write a search query that will find helpful information for answering the user's
 
             using var client = new HttpClient(handler)
             {
-                //BaseAddress = new Uri(apiEndpoint),
-                Timeout = TimeSpan.FromMinutes(5) // Increase timeout to 5 minutes
+                BaseAddress = new Uri(apiEndpoint),
+                Timeout = TimeSpan.FromMinutes(5) // Extended timeout
             };
-
 
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
             client.DefaultRequestHeaders.Add("extra-parameters", "pass-through");
-            client.BaseAddress = new Uri(apiEndpoint);
 
-            // Process all items into a sanitized array
+            // Prepare sanitized documents
             var documents = items
-                .Where(item =>
-                    !string.IsNullOrWhiteSpace(SanitizeString(item?.Title)) &&
-                    !string.IsNullOrWhiteSpace(SanitizeString(item?.Content))) // Filter out invalid documents
+                .Where(item => !string.IsNullOrWhiteSpace(SanitizeString(item?.Title)) &&
+                               !string.IsNullOrWhiteSpace(SanitizeString(item?.Content)))
                 .Select((item, index) => new
                 {
-                    id = (index + 1).ToString(), // Generate a unique id
-                    data = $"{SanitizeString(item?.Title)}: {SanitizeString(item?.Content)}" // Sanitize and combine Title and Content
+                    data = new
+                    {
+                        id = (index + 1).ToString(),
+                        title = SanitizeString(item?.Title),
+                        snippet = SanitizeString(item?.Content)
+                    }
                 })
-                .ToArray(); // Convert the results to an array
-            // Sample documents array
-            //var documents = new[]
-            //{
-            //    new { id = "1", data = "Cohere is the best!" }
-            //};
+                .ToArray();
 
-            // Log the documents
             string documentsJson = JsonConvert.SerializeObject(documents, Formatting.Indented);
             _logger.LogInformation("Prepared Documents:\n{DocumentsJson}", documentsJson);
 
+            string context = "";
             string systemMessage = @"## Task & Context
-You help people answer their questions and other requests interactively. You will be asked a very wide array of requests on all kinds of topics. You will be equipped with a wide range of search engines or similar tools to help you, which you use to research your answer. You should focus on serving the user's needs as best you can, which will be wide-ranging.
+Act as the company {{company}} with ticker {{ticker}}. Answer questions about your financial report {{form}}. 
+Only answer questions based on the info listed below. If the info below doesn't answer the question, say you don't know.
 
 ## Style Guide
-Unless the user asks for a different style of answer, you should answer in full sentences, using proper grammar and spelling.
+Answer in full sentences, using proper grammar and spelling.
+Format the response as follows:
+- **Title**: Generate a title from the context {{context}}
+- **Content Summary**: A summary of the content, including key points or highlights.";
 
-    ";
+            systemMessage = UpdateCompanyFilingSystemTemplate(context, ticker, company, form, systemMessage);
 
-            // Prepare the request body
+            // Create the request body
             var chatRequestBody = new
             {
                 model = "command-r-plus-08-2024",
@@ -1061,67 +969,241 @@ Unless the user asks for a different style of answer, you should answer in full 
                 new { role = "user", content = promptText }
             },
                 documents = documents,
-                //max_tokens = 2048,
                 temperature = 0.3,
-                //top_p = 0.1,
-                //frequency_penalty = 0,
-                //presence_penalty = 0,
-                //seed = 369,
-                citation_options = new { mode = "accurate" } // Fixed citationOptions syntax
-
+                citation_options = new { mode = "accurate" }
             };
 
             string requestJson = JsonConvert.SerializeObject(chatRequestBody, Formatting.Indented);
             _logger.LogInformation("Request Body:\n{RequestJson}", requestJson);
 
-            var content = new StringContent(requestJson, Encoding.UTF8, "application/json");
-            /*
-            API Routes
-
-            
-            Azure AI model inference: Chat Completion
-            https://AITCohere-command-r-plus-08-2024.eastus.models.ai.azure.com/chat/completions
-
-            supports Cohere’s native API schema.
-            Cohere: Chat
-            https://AITCohere-command-r-plus-08-2024.eastus.models.ai.azure.com/v1/chat
-
-            Cohere: Chat
-            https://AITCohere-command-r-plus-08-2024.eastus.models.ai.azure.com/v2/chat
-
-            */
-            // Send POST request
-            _logger.LogInformation("SendCohereRAGCompletionRequestAsync: Sending POST request to {Url}", client.BaseAddress + "v2/chat");
-            HttpResponseMessage response = await client.PostAsync("v2/chat", content).ConfigureAwait(false);
+            // Send the request
+            HttpResponseMessage response = await client.PostAsync("v2/chat", new StringContent(requestJson, Encoding.UTF8, "application/json")).ConfigureAwait(false);
 
             if (response.IsSuccessStatusCode)
             {
                 string responseContent = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
-                // Parse the JSON and pretty-print it
-                var parsedJson = JsonConvert.DeserializeObject(responseContent);
-                string prettyJson = JsonConvert.SerializeObject(parsedJson, Formatting.Indented);
-                _logger.LogInformation($"Response: {prettyJson}");
+
+                var parsedJson = JsonConvert.DeserializeObject(responseContent); // Deserialize the JSON
+
+                string prettyResponseContent = JsonConvert.SerializeObject(parsedJson, Formatting.Indented); // Re-serialize with indentation
+                                                                                                             // Log the pretty-printed response
+                _logger.LogInformation("Pretty Printed Response:\n{PrettyResponseContent}", prettyResponseContent);
+
+
+                dynamic parsedResponse = JsonConvert.DeserializeObject<dynamic>(responseContent);
+
+                var result = new CohereResponse
+                {
+                    GeneratedCompletion = parsedResponse?.message?.content[0]?.text ?? string.Empty,
+                    Citations = JsonConvert.DeserializeObject<List<Cosmos.Copilot.Models.Citation>>(JsonConvert.SerializeObject(parsedResponse?.message?.citations)),
+                    FinishReason = parsedResponse?.finish_reason,
+                    Usage = new Usage
+                    {
+                        InputTokens = parsedResponse?.usage?.tokens?.input_tokens ?? 0,
+                        OutputTokens = parsedResponse?.usage?.tokens?.output_tokens ?? 0,
+                        TotalTokens = parsedResponse?.usage?.tokens?.total_tokens ?? 0
+                    }
+                };
 
                 stopwatch.Stop();
-                _logger.LogInformation("SendCohereRAGCompletionRequestAsync completed in {ElapsedMinutes} min {ElapsedSeconds} sec",
+                _logger.LogInformation("Request completed in {ElapsedMinutes} min {ElapsedSeconds} sec",
                     stopwatch.Elapsed.Minutes, stopwatch.Elapsed.Seconds);
 
-                return ("", "");
+                return result;
             }
             else
             {
-                // Log error details
                 string errorDetails = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
                 _logger.LogError("Request failed with status {StatusCode}:\n{ErrorDetails}", response.StatusCode, errorDetails);
-                return ($"Request failed with status {response.StatusCode}: {errorDetails}", "");
+
+                return new CohereResponse
+                {
+                    GeneratedCompletion = $"Request failed: {errorDetails}",
+                    Citations = new List<Cosmos.Copilot.Models.Citation>()
+                };
             }
         }
         catch (Exception ex)
         {
-            // Log exception details
             _logger.LogError("An exception occurred: {ExceptionMessage}", ex.Message);
-            return ($"An error occurred: {ex.Message}", "");
+            return new CohereResponse
+            {
+                GeneratedCompletion = $"An error occurred: {ex.Message}",
+                Citations = new List<Cosmos.Copilot.Models.Citation>()
+            };
         }
+    }
+   private async Task<CohereResponse> SendCohereRAGCompletionEDGARRequestAsync(
+    string form,
+    string ticker,
+    string company,
+    List<EDGARKnowledgeBaseItem> items,
+       string promptText)
+    {
+        var stopwatch = Stopwatch.StartNew();
+
+        try
+        {
+            // Retrieve API key and endpoint from environment variables
+            string apiKey = Environment.GetEnvironmentVariable("COHERE_KEY");
+            string apiEndpoint = Environment.GetEnvironmentVariable("COHERE_ENDPOINT");
+
+            if (string.IsNullOrWhiteSpace(apiKey) || string.IsNullOrWhiteSpace(apiEndpoint))
+            {
+                _logger.LogError("API key or endpoint is not configured.");
+                return new CohereResponse
+                {
+                    GeneratedCompletion = "API key or endpoint is not configured.",
+                    Citations = new List<Cosmos.Copilot.Models.Citation>()
+                };
+            }
+
+            // Initialize HttpClientHandler with custom certificate validation
+            using var handler = new HttpClientHandler
+            {
+                ClientCertificateOptions = ClientCertificateOption.Manual,
+                ServerCertificateCustomValidationCallback = (httpRequestMessage, cert, certChain, policyErrors) => true
+            };
+
+            using var client = new HttpClient(handler)
+            {
+                BaseAddress = new Uri(apiEndpoint),
+                Timeout = TimeSpan.FromMinutes(5) // Extended timeout
+            };
+
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
+            client.DefaultRequestHeaders.Add("extra-parameters", "pass-through");
+
+            // Prepare sanitized documents
+            var documents = items
+                .Where(item => !string.IsNullOrWhiteSpace(SanitizeString(item?.Title)) &&
+                               !string.IsNullOrWhiteSpace(SanitizeString(item?.Content)))
+                .Select((item, index) => new
+                {
+                    data = new
+                    {
+                        id = (index + 1).ToString(),
+                        title = SanitizeString(item?.Title),
+                        snippet = SanitizeString(item?.Content)
+                    }
+                })
+                .ToArray();
+
+            string documentsJson = JsonConvert.SerializeObject(documents, Formatting.Indented);
+            _logger.LogInformation("Prepared Documents:\n{DocumentsJson}", documentsJson);
+
+            string context = "";
+            string systemMessage = @"## Task & Context
+Act as the company {{company}} with ticker {{ticker}}. Answer questions about your financial report {{form}}. 
+Only answer questions based on the info listed below. If the info below doesn't answer the question, say you don't know.
+
+## Style Guide
+Answer in full sentences, using proper grammar and spelling.
+Format the response as follows:
+- **Title**: Generate a title from the context {{context}}
+- **Content Summary**: A summary of the content, including key points or highlights.";
+
+            systemMessage = UpdateCompanyFilingSystemTemplate(context, ticker, company, form, systemMessage);
+
+            // Create the request body
+            var chatRequestBody = new
+            {
+                model = "command-r-plus-08-2024",
+                messages = new[]
+                {
+                new { role = "system", content = systemMessage },
+                new { role = "user", content = promptText }
+            },
+                documents = documents,
+                temperature = 0.3,
+                citation_options = new { mode = "accurate" }
+            };
+
+            string requestJson = JsonConvert.SerializeObject(chatRequestBody, Formatting.Indented);
+            _logger.LogInformation("Request Body:\n{RequestJson}", requestJson);
+
+            // Send the request
+            HttpResponseMessage response = await client.PostAsync("v2/chat", new StringContent(requestJson, Encoding.UTF8, "application/json")).ConfigureAwait(false);
+
+            if (response.IsSuccessStatusCode)
+            {
+                string responseContent = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+
+                var parsedJson = JsonConvert.DeserializeObject(responseContent); // Deserialize the JSON
+
+                string prettyResponseContent = JsonConvert.SerializeObject(parsedJson, Formatting.Indented); // Re-serialize with indentation
+                                                                                                             // Log the pretty-printed response
+                _logger.LogInformation("Pretty Printed Response:\n{PrettyResponseContent}", prettyResponseContent);
+
+
+                dynamic parsedResponse = JsonConvert.DeserializeObject<dynamic>(responseContent);
+
+                var result = new CohereResponse
+                {
+                    GeneratedCompletion = parsedResponse?.message?.content[0]?.text ?? string.Empty,
+                    Citations = JsonConvert.DeserializeObject<List<Cosmos.Copilot.Models.Citation>>(JsonConvert.SerializeObject(parsedResponse?.message?.citations)),
+                    FinishReason = parsedResponse?.finish_reason,
+                    Usage = new Usage
+                    {
+                        InputTokens = parsedResponse?.usage?.tokens?.input_tokens ?? 0,
+                        OutputTokens = parsedResponse?.usage?.tokens?.output_tokens ?? 0,
+                        TotalTokens = parsedResponse?.usage?.tokens?.total_tokens ?? 0
+                    }
+                };
+
+                stopwatch.Stop();
+                _logger.LogInformation("Request completed in {ElapsedMinutes} min {ElapsedSeconds} sec",
+                    stopwatch.Elapsed.Minutes, stopwatch.Elapsed.Seconds);
+
+                return result;
+            }
+            else
+            {
+                string errorDetails = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+                _logger.LogError("Request failed with status {StatusCode}:\n{ErrorDetails}", response.StatusCode, errorDetails);
+
+                return new CohereResponse
+                {
+                    GeneratedCompletion = $"Request failed: {errorDetails}",
+                    Citations = new List<Cosmos.Copilot.Models.Citation>()
+                };
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError("An exception occurred: {ExceptionMessage}", ex.Message);
+            return new CohereResponse
+            {
+                GeneratedCompletion = $"An error occurred: {ex.Message}",
+                Citations = new List<Cosmos.Copilot.Models.Citation>()
+            };
+        }
+    }
+
+    public string UpdateCompanyFilingSystemTemplate(
+ string context,
+string ticker,
+string company,
+string form,
+ string promptyTemplate)
+    {
+
+        // Add replacements for placeholders
+        var replacements = new Dictionary<string, string>
+            {
+                { "{{context}}", string.IsNullOrEmpty(context) ? "" : $"\n# Context:\n<context>{context}</context>"},
+                { "{{ticker}}", string.IsNullOrEmpty(ticker) ? "" : $"\n# Ticker:\n<ticker>{ticker}</ticker>"},
+                { "{{company}}", string.IsNullOrEmpty(company) ? "" : $"\n# Company:\n<company>{company}</company>"},
+                { "{{form}}", string.IsNullOrEmpty(form) ? "" : $"\n# Form:\n<form>{form}</form>"},
+
+            };
+        // Replace placeholders in YAML content with corresponding values
+        foreach (var replacement in replacements)
+        {
+            promptyTemplate = promptyTemplate.Replace(replacement.Key, replacement.Value);
+        }
+
+        return promptyTemplate;
     }
     // Utility method to sanitize strings by removing control and invisible characters
     string SanitizeString(string input)
@@ -1222,7 +1304,7 @@ Unless the user asks for a different style of answer, you should answer in full 
 
                 stopwatch.Stop();
 
-                _logger.LogInformation("Reordered Items:\n{ReorderedItems}", JsonConvert.SerializeObject(reorderedItems, Formatting.Indented));
+                //_logger.LogInformation("Reordered Items:\n{ReorderedItems}", JsonConvert.SerializeObject(reorderedItems, Formatting.Indented));
                 return (reorderedItems);
             }
             else
@@ -1236,6 +1318,105 @@ Unless the user asks for a different style of answer, you should answer in full 
         {
             _logger.LogError("An exception occurred: {ExceptionMessage}", ex.Message);
             return (new List<KnowledgeBaseItem>());
+        }
+    }
+  private async Task<List<EDGARKnowledgeBaseItem>> SendCohereRAGRerankEDGARRequestItemsAsync(
+            List<EDGARKnowledgeBaseItem> items,
+            string promptText)
+    {
+        var stopwatch = Stopwatch.StartNew();
+
+        try
+        {
+            // Retrieve API key and endpoint
+            string apiKey = Environment.GetEnvironmentVariable("COHERE_RERANK_KEY");
+            string apiEndpoint = Environment.GetEnvironmentVariable("COHERE_RERANK_ENDPOINT");
+
+            if (string.IsNullOrWhiteSpace(apiKey) || string.IsNullOrWhiteSpace(apiEndpoint))
+            {
+                _logger.LogError("API key or endpoint is not configured.");
+                return (new List<EDGARKnowledgeBaseItem>());
+            }
+
+            using var client = new HttpClient
+            {
+                BaseAddress = new Uri(apiEndpoint)
+            };
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
+
+            // Prepare the documents list
+            var documents = items
+                .Where(item => !string.IsNullOrWhiteSpace(item?.Title) && !string.IsNullOrWhiteSpace(item?.Content))
+                .Select(item => new
+                {
+                    Title = item.Title.Trim(),
+                    Content = item.Content.Trim()
+                })
+                .ToList();
+
+            if (documents.Count == 0)
+            {
+                _logger.LogError("No valid documents found.");
+                throw new InvalidOperationException("No valid documents found.");
+            }
+            //  len(documents) * max_chunks_per_doc <10,000 where max_chunks_per_doc is set to 10 as default.
+            // Prepare the request body
+            var chatRequestBody = new
+            {
+                model = "rerank-v3.5",
+                documents,
+                query = promptText,
+                rank_fields = new[] { "Title", "Content" },
+                top_n = 50
+            };
+
+            string requestJson = JsonConvert.SerializeObject(chatRequestBody, Formatting.Indented);
+            var content = new StringContent(requestJson, Encoding.UTF8, "application/json");
+
+            // Send POST request
+            HttpResponseMessage response = await client.PostAsync("v2/rerank", content).ConfigureAwait(false);
+
+            if (response.IsSuccessStatusCode)
+            {
+                string responseContent = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+                var responseObject = JsonConvert.DeserializeObject<dynamic>(responseContent);
+
+                // Parse rankings
+                var rankingsList = ((IEnumerable<dynamic>)responseObject.results)
+                    .Select(r => new
+                    {
+                        Index = (int)r.index,
+                        RelevanceScore = (double)r.relevance_score
+                    })
+                    .ToList();
+
+                // Reorder KnowledgeBaseItems
+                var reorderedItems = rankingsList
+                    .Select(r => new EDGARKnowledgeBaseItem
+                    {
+                        Title = items[r.Index].Title,
+                        Content = items[r.Index].Content,
+                        RelevanceScore = r.RelevanceScore
+                    })
+                    .OrderByDescending(r => r.RelevanceScore)
+                    .ToList();
+
+                stopwatch.Stop();
+
+                //_logger.LogInformation("Reordered Items:\n{ReorderedItems}", JsonConvert.SerializeObject(reorderedItems, Formatting.Indented));
+                return (reorderedItems);
+            }
+            else
+            {
+                string errorDetails = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+                _logger.LogError("Request failed with status {StatusCode}:\n{ErrorDetails}", response.StatusCode, errorDetails);
+                return (new List<EDGARKnowledgeBaseItem>());
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError("An exception occurred: {ExceptionMessage}", ex.Message);
+            return (new List<EDGARKnowledgeBaseItem>());
         }
     }
 
