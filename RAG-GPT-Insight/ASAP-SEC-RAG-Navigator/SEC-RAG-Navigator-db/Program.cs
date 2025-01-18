@@ -1912,6 +1912,86 @@ The output should be maximum of {{maxTokens}}. Try to fit it all in. Don't cut
             Console.WriteLine($"Error: {ex.Message}");
         }
     }
+   public async Task HandlePhi4Async1()
+    {
+        // Step 1: Initialize the client with endpoint and API key
+        var client = new ChatCompletionsClient(
+            new Uri(Environment.GetEnvironmentVariable("PHI4_ENDPOINT")), // Ensure this environment variable is set
+            new AzureKeyCredential(Environment.GetEnvironmentVariable("PHI4_KEY")) // Ensure this environment variable is set
+        );
+
+        try
+        {
+            // Step 2: Get model information (optional)
+            var modelInfo = client.GetModelInfo();
+            Console.WriteLine($"Model name: {modelInfo.Value.ModelName}");
+            Console.WriteLine($"Model type: {modelInfo.Value.ModelType}");
+            Console.WriteLine($"Model provider name: {modelInfo.Value.ModelProviderName}");
+            string userInput = "Hello";
+            var promptyTemplate = _promptyTemplate;
+            Console.WriteLine($"promptyTemplate ----- : {promptyTemplate}");
+            Console.WriteLine($"promptyTemplate ----- :");
+
+            // Step 3: Create chat completion request options
+            // Define Messages separately
+            var messages = new List<ChatRequestMessage>
+            {
+                new ChatRequestSystemMessage(promptyTemplate),
+                new ChatRequestUserMessage(userInput)
+            };
+            Console.WriteLine($"GenerateWithCohereAsync: input: {userInput}");
+
+            try
+            {
+                // Construct requestOptions using the separate Messages list
+                var requestOptions = new ChatCompletionsOptions
+                {
+                    Messages = messages,
+                    MaxTokens = 100, // Limit response length
+                    Temperature = 0.7f, // Adjust creativity
+                                        //ResponseFormat = new ChatCompletionsResponseFormatJSON()
+                };
+
+                string jsonmessages = Newtonsoft.Json.JsonConvert.SerializeObject(messages, Newtonsoft.Json.Formatting.Indented);
+
+                Console.WriteLine($"jsonmessages:\n{jsonmessages}");
+                // Step 4: Send chat completion request
+                Console.WriteLine("Sending chat completion request...");
+                Azure.Response<ChatCompletions> response = await client.CompleteAsync(requestOptions);
+                jsonmessages = Newtonsoft.Json.JsonConvert.SerializeObject(response, Newtonsoft.Json.Formatting.Indented);
+                Console.WriteLine($"jsonmessages response: {jsonmessages}");
+
+                System.Console.WriteLine(response.Value.Content);
+                Console.WriteLine($"ID: {response.Value.Id}");
+                Console.WriteLine($"Created: {response.Value.Created}");
+                Console.WriteLine($"Model: {response.Value.Model}");
+                Console.WriteLine($"Content: {response.Value.Content}");
+                Console.WriteLine("Usage:");
+                Console.WriteLine($"  Completion Tokens: {response.Value.Usage.CompletionTokens}");
+                Console.WriteLine($"  Prompt Tokens: {response.Value.Usage.PromptTokens}");
+                Console.WriteLine($"  Total Tokens: {response.Value.Usage.TotalTokens}");
+
+                ChatCompletions result = response.Value;
+                Console.WriteLine($"FinishReason: {result.FinishReason}");
+                Console.WriteLine($"Role: {result.Role}");
+            }
+            catch (RequestFailedException ex)
+            {
+                if (ex.Status == 422)
+                {
+                    Console.WriteLine($"Looks like the model doesn't support a parameter: {ex.Message}");
+                }
+                else
+                {
+                    throw;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error: {ex.Message}");
+        }
+    }
 
     public async Task<string[]> HandlePhi4Async()
     {
