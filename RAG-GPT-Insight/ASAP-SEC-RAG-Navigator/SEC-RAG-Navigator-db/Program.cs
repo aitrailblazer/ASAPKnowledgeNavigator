@@ -97,6 +97,7 @@ class Program
         Console.WriteLine("  SEC-RAG-Navigator knowledge-base-rag-rerank-search \"<promptText>\"");
         Console.WriteLine("  SEC-RAG-Navigator phi-3.5-moe-instruct");
         Console.WriteLine("  SEC-RAG-Navigator phi-3.5-moe-instruct-streaming");
+        Console.WriteLine("  SEC-RAG-Navigator phi-4");
         Console.WriteLine("  SEC-RAG-Navigator cohere-command-r+chat");
         Console.WriteLine("  SEC-RAG-Navigator cohere-command-r+chat-streaming");
         Console.WriteLine("  SEC-RAG-Navigator cohere-command-r+chat-streaming-http");
@@ -500,6 +501,10 @@ public class SEC_RAG_NavigatorService
             {
                 await _cosmosDbServiceWorking.HandlePhi35MoEInstructStreamingCommandAsyncs();
             }
+            else if (command == "phi-4")
+            {
+                await _cosmosDbServiceWorking.HandlePhi4Async();
+            }
             else if (command == "cohere-command-r+chat")
             {
                 await _cosmosDbServiceWorking.HandleCohereChatCommandRAsync();
@@ -555,6 +560,7 @@ public class SEC_RAG_NavigatorService
         Console.WriteLine("  SEC-RAG-Navigator knowledge-base-rag-rerank-search \"<promptText>\"");
         Console.WriteLine("  SEC-RAG-Navigator phi-3.5-moe-instruct");
         Console.WriteLine("  SEC-RAG-Navigator phi-3.5-moe-instruct-streaming");
+        Console.WriteLine("  SEC-RAG-Navigator phi-4");
         Console.WriteLine("  SEC-RAG-Navigator cohere-command-r+chat");
         Console.WriteLine("  SEC-RAG-Navigator cohere-command-r+chat-streaming");
         Console.WriteLine("  SEC-RAG-Navigator cohere-command-r+chat-streaming-http");
@@ -1906,6 +1912,115 @@ The output should be maximum of {{maxTokens}}. Try to fit it all in. Don't cut
             Console.WriteLine($"Error: {ex.Message}");
         }
     }
+
+    public async Task<string[]> HandlePhi4Async()
+    {
+        string input = "Generate 10 queries from the following text: Phi-4 is the best!";
+        string system_message = @"## Task and Context 
+        You are a query generation assistant.
+        ## Style Guide
+Please follow these guidelines to ensure high-quality output:
+1. Use **US spelling** consistently throughout the text.
+2. Maintain a professional and concise tone.
+3. Structure queries clearly and ensure they are relevant to the input context.
+4. Avoid redundancy and ensure each query is unique.";
+
+        // Clean up input strings
+        system_message = system_message.Replace("\r\n", " ").Replace("\n", " ");
+        input = input.Replace("\r\n", " ").Replace("\n", " ");
+
+        // Initialize HttpClientHandler with custom certificate validation
+        using var handler = new HttpClientHandler
+        {
+            ClientCertificateOptions = ClientCertificateOption.Manual,
+            ServerCertificateCustomValidationCallback = (httpRequestMessage, cert, cetChain, policyErrors) => true
+        };
+
+        using var client = new HttpClient(handler);
+        try
+        {
+            // Construct request body for query generation
+            string requestBody = @"
+        {
+            'messages': [
+                {
+                    'role': 'system',
+                    'content': '{system_message}'
+                },
+                {
+                    'role': 'user', 
+                    'content': '{input}'
+                }
+            ],
+            'max_tokens': 2048,
+            'temperature': 0.8,
+            'top_p': 0.1,
+            'frequency_penalty': 0,
+            'presence_penalty': 0,
+            'seed': 369
+        }"
+              .Replace("'", "\"") // Replace single quotes with double quotes for valid JSON
+              .Replace("{system_message}", system_message)
+              .Replace("{input}", input); // Replace placeholders with actual values
+
+            Console.WriteLine($"Request Body: {requestBody}");
+
+            // Retrieve API key and endpoint from environment variables
+            string apiKey = Environment.GetEnvironmentVariable("PHI4_KEY");
+            string apiEndpoint = Environment.GetEnvironmentVariable("PHI4_ENDPOINT");
+            if (string.IsNullOrEmpty(apiKey) || string.IsNullOrEmpty(apiEndpoint))
+            {
+                throw new InvalidOperationException("API key or endpoint is not configured.");
+            }
+
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
+            client.BaseAddress = new Uri(apiEndpoint);
+
+            // Set up the request content
+            var content = new StringContent(requestBody, Encoding.UTF8, "application/json");
+
+            // Send POST request to generate queries
+            HttpResponseMessage response = await client.PostAsync("/chat/completions", content).ConfigureAwait(false);
+            if (response.IsSuccessStatusCode)
+            {
+                string result = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+
+                // Parse the response JSON to extract generated queries
+                var responseJson = JsonConvert.DeserializeObject<dynamic>(result);
+                var generatedQueries = new List<string>();
+
+                foreach (var choice in responseJson.choices)
+                {
+                    if (choice.message != null && choice.message.content != null)
+                    {
+                        generatedQueries.Add(choice.message.content.ToString());
+                    }
+                }
+
+                Console.WriteLine("Generated Queries:");
+                foreach (var query in generatedQueries)
+                {
+                    Console.WriteLine(query);
+                }
+
+                return generatedQueries.ToArray();
+            }
+            else
+            {
+                Console.WriteLine($"The request failed with status code: {response.StatusCode}");
+                string responseContent = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+                Console.WriteLine($"Error Details: {responseContent}");
+                return Array.Empty<string>();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"An error occurred: {ex.Message}");
+            return Array.Empty<string>();
+        }
+    }
+
+
     public async Task HandleCohereChatCommandRAsync()
     {
         // Initial system message
