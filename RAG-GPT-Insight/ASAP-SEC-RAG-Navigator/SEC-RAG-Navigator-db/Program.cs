@@ -95,9 +95,8 @@ class Program
         Console.WriteLine("  SEC-RAG-Navigator knowledge-base-rag-search \"<promptText>\"");
         Console.WriteLine("  SEC-RAG-Navigator knowledge-base-rag-search-edgar \"<promptText>\"");
         Console.WriteLine("  SEC-RAG-Navigator knowledge-base-rag-rerank-search \"<promptText>\"");
-        Console.WriteLine("  SEC-RAG-Navigator phi-3.5-moe-instruct");
-        Console.WriteLine("  SEC-RAG-Navigator phi-3.5-moe-instruct-streaming");
         Console.WriteLine("  SEC-RAG-Navigator phi-4");
+        Console.WriteLine("  SEC-RAG-Navigator phi-4-streaming");
         Console.WriteLine("  SEC-RAG-Navigator cohere-command-r+chat");
         Console.WriteLine("  SEC-RAG-Navigator cohere-command-r+chat-streaming");
         Console.WriteLine("  SEC-RAG-Navigator cohere-command-r+chat-streaming-http");
@@ -493,17 +492,19 @@ public class SEC_RAG_NavigatorService
                     similarityScore: 0.7 // Default similarity score
                 );
             }
-            else if (command == "phi-3.5-moe-instruct")
-            {
-                await _cosmosDbServiceWorking.HandlePhi35MoEInstructCommandAsyncs();
-            }
-            else if (command == "phi-3.5-moe-instruct-streaming")
-            {
-                await _cosmosDbServiceWorking.HandlePhi35MoEInstructStreamingCommandAsyncs();
-            }
             else if (command == "phi-4")
             {
-                await _cosmosDbServiceWorking.HandlePhi4Async();
+                string endpoint = GetEnvironmentVariable("PHI_ENDPOINT");
+                string apiKey = GetEnvironmentVariable("PHI_KEY");
+                string modelId = "Phi-4";
+                await _cosmosDbServiceWorking.HandleInferenceAsync(endpoint, apiKey, modelId);
+            }
+            else if (command == "phi-4-streaming")
+            {
+                string endpoint = GetEnvironmentVariable("PHI_ENDPOINT");
+                string apiKey = GetEnvironmentVariable("PHI_KEY");
+                string modelId = "Phi-4";
+                await _cosmosDbServiceWorking.HandleInferenceStreamingAsync(endpoint, apiKey, modelId);
             }
             else if (command == "cohere-command-r+chat")
             {
@@ -558,9 +559,8 @@ public class SEC_RAG_NavigatorService
         Console.WriteLine("  SEC-RAG-Navigator knowledge-base-rag-search \"<promptText>\"");
         Console.WriteLine("  SEC-RAG-Navigator knowledge-base-rag-search-edgar \"<promptText>\"");
         Console.WriteLine("  SEC-RAG-Navigator knowledge-base-rag-rerank-search \"<promptText>\"");
-        Console.WriteLine("  SEC-RAG-Navigator phi-3.5-moe-instruct");
-        Console.WriteLine("  SEC-RAG-Navigator phi-3.5-moe-instruct-streaming");
         Console.WriteLine("  SEC-RAG-Navigator phi-4");
+        Console.WriteLine("  SEC-RAG-Navigator phi-4-streaming");
         Console.WriteLine("  SEC-RAG-Navigator cohere-command-r+chat");
         Console.WriteLine("  SEC-RAG-Navigator cohere-command-r+chat-streaming");
         Console.WriteLine("  SEC-RAG-Navigator cohere-command-r+chat-streaming-http");
@@ -1648,11 +1648,8 @@ public class CosmosDbServiceWorking
     /// using semantic kernel
     /// </summary>
     /// <returns>A Task representing the asynchronous operation.</returns>
-    public async Task HandlePhi35MoEInstructCommandAsyncs()
+    public async Task HandleInferenceAsync(string endpoint, string apiKey, string modelId)
     {
-        string endpoint = GetEnvironmentVariable("PHI_ENDPOINT");
-        string apiKey = GetEnvironmentVariable("PHI_KEY");
-        string modelId = "phi-3-5-moe-instruct";
         // Initialize the custom tokenizer (e.g., for GPT-4)
         var tokenizer = TiktokenTokenizer.CreateForModel("gpt-4");
 
@@ -1696,12 +1693,13 @@ public class CosmosDbServiceWorking
             // Set arguments for execution
             var arguments = new KernelArguments(executionSettings)
             {
-                ["input"] = userInput
+                ["input"] = userInput,
+                ["context"] = userInput
             };
 
             try
             {
-                Console.Write("Phi3: ");
+                Console.Write($"{modelId}: ");
 
                 // Calculate token count for input using the custom tokenizer
                 int inputTokenCount = tokenizer.CountTokens(userInput);
@@ -1826,11 +1824,6 @@ The output should be maximum of {{maxTokens}}. Try to fit it all in. Don't cut
 
 - context: {{context}}
 
-
-
-
-
-
     """;
     public async Task HandleCohereCommandRAsync1()
     {
@@ -1912,12 +1905,12 @@ The output should be maximum of {{maxTokens}}. Try to fit it all in. Don't cut
             Console.WriteLine($"Error: {ex.Message}");
         }
     }
-   public async Task HandlePhi4Async1()
+    public async Task HandlePhi4Async1()
     {
         // Step 1: Initialize the client with endpoint and API key
         var client = new ChatCompletionsClient(
-            new Uri(Environment.GetEnvironmentVariable("PHI4_ENDPOINT")), // Ensure this environment variable is set
-            new AzureKeyCredential(Environment.GetEnvironmentVariable("PHI4_KEY")) // Ensure this environment variable is set
+            new Uri(Environment.GetEnvironmentVariable("PHI_ENDPOINT")), // Ensure this environment variable is set
+            new AzureKeyCredential(Environment.GetEnvironmentVariable("PHI_KEY")) // Ensure this environment variable is set
         );
 
         try
@@ -2046,8 +2039,8 @@ Please follow these guidelines to ensure high-quality output:
             Console.WriteLine($"Request Body: {requestBody}");
 
             // Retrieve API key and endpoint from environment variables
-            string apiKey = Environment.GetEnvironmentVariable("PHI4_KEY");
-            string apiEndpoint = Environment.GetEnvironmentVariable("PHI4_ENDPOINT");
+            string apiKey = Environment.GetEnvironmentVariable("PHI_KEY");
+            string apiEndpoint = Environment.GetEnvironmentVariable("PHI_ENDPOINT");
             if (string.IsNullOrEmpty(apiKey) || string.IsNullOrEmpty(apiEndpoint))
             {
                 throw new InvalidOperationException("API key or endpoint is not configured.");
@@ -2972,12 +2965,8 @@ Please follow these guidelines to ensure high-quality output:
             Console.WriteLine($"An unexpected error occurred during {requestType} request: {ex.Message}");
         }
     }
-    public async Task HandlePhi35MoEInstructStreamingCommandAsyncs()
+    public async Task HandleInferenceStreamingAsync(string endpoint, string apiKey, string modelId)
     {
-        string endpoint = GetEnvironmentVariable("PHI_ENDPOINT");
-        string apiKey = GetEnvironmentVariable("PHI_KEY");
-        string modelId = "phi-3-5-moe-instruct";
-
         // Initialize the custom tokenizer (e.g., for GPT-4)
         var tokenizer = TiktokenTokenizer.CreateForModel("gpt-4");
 
@@ -3027,7 +3016,8 @@ Please follow these guidelines to ensure high-quality output:
             // Set arguments for execution
             var arguments = new KernelArguments(executionSettings)
             {
-                //["input"] = userInput
+                ["input"] = userInput,
+                ["context"] = userInput
             };
 
             var buffer = new StringBuilder(); // Buffer for partial responses
@@ -3035,7 +3025,7 @@ Please follow these guidelines to ensure high-quality output:
 
             try
             {
-                Console.Write("Phi3: ");
+                Console.Write($"{modelId}: ");
                 //var paragraphWritingFunction = kernel.CreateFunctionFromPrompt(FunctionDefinition);
                 var paragraphWritingFunction = new Kernel().CreateFunctionFromPrompty(promptyTemplate);
 

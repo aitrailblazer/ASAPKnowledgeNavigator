@@ -560,8 +560,9 @@ public class CosmosDbService
         );
 
         // Initialize base query
+        // TOP 200 
         string queryText = @"
-        SELECT TOP 100 c.id, c.tenantId, c.userId, c.categoryId, c.title, c.content, 
+        SELECT c.id, c.tenantId, c.userId, c.categoryId, c.title, c.content, 
                c.referenceDescription, c.referenceLink, 
                VectorDistance(c.vectors, @vectors) AS similarityScore
         FROM c
@@ -643,8 +644,9 @@ public class CosmosDbService
         );
 
         // Initialize base query
+        // TOP 200
         string queryText = @"
-        SELECT TOP 100 c.id, c.form, c.ticker, c.categoryId, c.title, c.content, 
+        SELECT  c.id, c.form, c.ticker, c.categoryId, c.title, c.content, 
                c.referenceDescription, c.referenceLink, 
                VectorDistance(c.vectors, @vectors) AS similarityScore
         FROM c

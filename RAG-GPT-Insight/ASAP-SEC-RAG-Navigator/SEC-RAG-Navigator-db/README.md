@@ -38,6 +38,9 @@ Q/A:
 
 
 --
+dotnet run knowledge-base-rag-search "risk factors"
+
+
 dotnet run knowledge-base-rag-search "total revenue 2023?"
 dotnet run knowledge-base-rag-search "What did the report say about the company's Q4 performance?"
 dotnet run knowledge-base-rag-search  "List the overall revenue numbers for 2021, 2022, and 2023 in the 10-K as bullet points, then explain the revenue growth trends."
