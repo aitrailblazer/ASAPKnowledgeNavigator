@@ -95,8 +95,10 @@ class Program
         Console.WriteLine("  SEC-RAG-Navigator knowledge-base-rag-search \"<promptText>\"");
         Console.WriteLine("  SEC-RAG-Navigator knowledge-base-rag-search-edgar \"<promptText>\"");
         Console.WriteLine("  SEC-RAG-Navigator knowledge-base-rag-rerank-search \"<promptText>\"");
-        Console.WriteLine("  SEC-RAG-Navigator phi-4");
-        Console.WriteLine("  SEC-RAG-Navigator phi-4-streaming");
+        Console.WriteLine("  SEC-RAG-Navigator codestral");
+        Console.WriteLine("  SEC-RAG-Navigator codestral-streaming");
+        Console.WriteLine("  SEC-RAG-Navigator phi");
+        Console.WriteLine("  SEC-RAG-Navigator phi-streaming");
         Console.WriteLine("  SEC-RAG-Navigator cohere-command-r+chat");
         Console.WriteLine("  SEC-RAG-Navigator cohere-command-r+chat-streaming");
         Console.WriteLine("  SEC-RAG-Navigator cohere-command-r+chat-streaming-http");
@@ -492,14 +494,28 @@ public class SEC_RAG_NavigatorService
                     similarityScore: 0.7 // Default similarity score
                 );
             }
-            else if (command == "phi-4")
+            else if (command == "codestral")
+            {
+                string endpoint = GetEnvironmentVariable("CODESTRAL_ENDPOINT");
+                string apiKey = GetEnvironmentVariable("CODESTRAL_KEY");
+                string modelId = "Codestral";
+                await _cosmosDbServiceWorking.HandleInferenceAsync(endpoint, apiKey, modelId);
+            }
+            else if (command == "codestral-streaming")
+            {
+                string endpoint = GetEnvironmentVariable("CODESTRAL_ENDPOINT");
+                string apiKey = GetEnvironmentVariable("CODESTRAL_KEY");
+                string modelId = "Codestral-2501";
+                await _cosmosDbServiceWorking.HandleInferenceStreamingAsync(endpoint, apiKey, modelId);
+            }
+            else if (command == "phi")
             {
                 string endpoint = GetEnvironmentVariable("PHI_ENDPOINT");
                 string apiKey = GetEnvironmentVariable("PHI_KEY");
                 string modelId = "Phi-4";
                 await _cosmosDbServiceWorking.HandleInferenceAsync(endpoint, apiKey, modelId);
             }
-            else if (command == "phi-4-streaming")
+            else if (command == "phi-streaming")
             {
                 string endpoint = GetEnvironmentVariable("PHI_ENDPOINT");
                 string apiKey = GetEnvironmentVariable("PHI_KEY");
@@ -559,8 +575,10 @@ public class SEC_RAG_NavigatorService
         Console.WriteLine("  SEC-RAG-Navigator knowledge-base-rag-search \"<promptText>\"");
         Console.WriteLine("  SEC-RAG-Navigator knowledge-base-rag-search-edgar \"<promptText>\"");
         Console.WriteLine("  SEC-RAG-Navigator knowledge-base-rag-rerank-search \"<promptText>\"");
-        Console.WriteLine("  SEC-RAG-Navigator phi-4");
-        Console.WriteLine("  SEC-RAG-Navigator phi-4-streaming");
+        Console.WriteLine("  SEC-RAG-Navigator codestral");
+        Console.WriteLine("  SEC-RAG-Navigator codestral-streaming");
+        Console.WriteLine("  SEC-RAG-Navigator phi");
+        Console.WriteLine("  SEC-RAG-Navigator phi-streaming");
         Console.WriteLine("  SEC-RAG-Navigator cohere-command-r+chat");
         Console.WriteLine("  SEC-RAG-Navigator cohere-command-r+chat-streaming");
         Console.WriteLine("  SEC-RAG-Navigator cohere-command-r+chat-streaming-http");
