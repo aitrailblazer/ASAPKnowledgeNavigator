@@ -1,0 +1,784 @@
+﻿@page "/1234"
+@rendermode InteractiveServer
+@inject ChatService ChatService
+@inject SECEdgarWSAppService SECEdgarWSAppService
+@inject GoSECEdgarWSAppService GoSECEdgarWSAppService
+
+@inject ILogger<Home> Logger
+@inject IJSRuntime JSRuntime
+@using System.Text.RegularExpressions
+@using System.Text.Json
+
+<PageTitle>ASAP Knowledge Navigator</PageTitle>
+
+<FluentCard
+    Style="padding: 20px; max-width: 800px; margin: 40px auto; border-radius: 12px; box-shadow: 0px 4px 8px rgba(0,0,0,0.1); text-align: center;">
+    <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.Left" VerticalGap="2">
+        <FluentIcon Value="@(new Icons.Regular.Size24.SearchSparkle())" Color="@Color.Accent" />
+        <FluentLabel Typo="Typography.H4" Style="color: #347687;">EDGAR Filing Search</FluentLabel>
+    </FluentStack>
+
+    <!-- Input Section -->
+    <FluentStack Orientation="Orientation.Vertical" VerticalGap="2"
+        Style="padding: 20px; border: 1px solid var(--neutral-outline-rest); border-radius: 8px; background-color: var(--neutral-fill-rest); text-align: center;">
+        <div class="textarea-container" style="width: 100%;">
+            <textarea @bind="Ticker" @oninput="HandleTickerInput" placeholder="Enter ticker symbol (e.g., AAPL, MSFT)"
+                maxlength="10" id="animatedTextarea"
+                style="width: 100%; padding: 12px; font-size: 16px; border: 1px solid #ccc; border-radius: 8px; transition: border-color 0.3s ease; resize: none;">
+            </textarea>
+        </div>
+
+        <!-- Display Results -->
+        @if (!string.IsNullOrEmpty(CIK))
+        {
+            <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.Left"
+                VerticalGap="2">
+                <FluentLabel Typo="Typography.Body">@Name</FluentLabel>
+                <FluentLabel Typo="Typography.Body">Stock Symbol: @Ticker</FluentLabel>
+                <FluentLabel Typo="Typography.Body">CIK: @CIK</FluentLabel>
+            </FluentStack>
+
+        }
+        <FluentToolbar id="toolbar-slotted-label">
+            <!-- Button to Trigger the Menu -->
+
+            <FluentButton IconStart="@(new Icons.Filled.Size24.DocumentOnePage())" id="conceptMenuButton"
+                Appearance="Appearance.Neutral" @onclick="@(() => formOpen = !formOpen)"
+                disabled="@IsMenuButtonDisabled">
+                Latest Filings
+            </FluentButton>
+            <!-- Menu to Select Available Forms -->
+            @SelectedForm
+            <FluentMenu @bind-Open="@formOpen" @onmenuchange="OnFormMenuChange" Width="400px">
+                @if (AvailableForms != null && AvailableForms.Any())
+                {
+                    @foreach (var form in AvailableForms)
+                    {
+                        <FluentMenuItem Value="@form">@form</FluentMenuItem>
+                    }
+                }
+                else
+                {
+                    <FluentMenuItem Value="NoFormsAvailable" Disabled="true">No Forms Available</FluentMenuItem>
+                }
+            </FluentMenu>
+            <FluentButton IconStart="@(new Icons.Filled.Size24.DocumentOnePageMultiple())"
+                Appearance="Appearance.Neutral" @onclick="FetchFilings" disabled="@IsButtonDisabled">
+                All Filings
+            </FluentButton>
+            <!-- Button to Trigger the Menu -->
+            <FluentButton IconStart="@(new Icons.Filled.Size24.DataArea())" id="conceptMenuButton"
+                Appearance="Appearance.Neutral" @onclick="@(() => open = !open)" disabled="@IsButtonDisabled">
+                Financial Concept
+            </FluentButton>
+            <!-- Menu to Select Financial Concepts -->
+            <FluentMenu @bind-Open="@open" @onmenuchange="OnFinancialConceptMenuChange" Width="400px">
+                <FluentMenuItem Value="Assets">Assets</FluentMenuItem>
+                <FluentMenuItem Value="AssetsCurrent">AssetsCurrent</FluentMenuItem>
+                <FluentMenuItem Value="Liabilities">Liabilities</FluentMenuItem>
+                <FluentMenuItem Value="LiabilitiesCurrent">LiabilitiesCurrent</FluentMenuItem>
+                <FluentMenuItem Value="StockholdersEquity">StockholdersEquity</FluentMenuItem>
+                <FluentMenuItem Value="Revenues">Revenues</FluentMenuItem>
+                <FluentMenuItem Value="GrossProfit">GrossProfit</FluentMenuItem>
+                <FluentMenuItem Value="OperatingIncomeLoss">OperatingIncomeLoss</FluentMenuItem>
+                <FluentMenuItem Value="NetIncomeLoss">NetIncomeLoss</FluentMenuItem>
+                <FluentMenuItem Value="CashAndCashEquivalentsAtCarryingValue">
+                    CashAndCashEquivalentsAtCarryingValue
+                </FluentMenuItem>
+                <FluentMenuItem Value="LongTermDebt">LongTermDebt</FluentMenuItem>
+                <FluentMenuItem Value="ResearchAndDevelopmentExpense">ResearchAndDevelopmentExpense
+                </FluentMenuItem>
+                <FluentMenuItem Value="SellingGeneralAndAdministrativeExpense">
+                    SellingGeneralAndAdministrativeExpense</FluentMenuItem>
+            </FluentMenu>
+            <FluentButton IconStart="@(new Icons.Filled.Size24.LayerDiagonalSparkle())"
+                Appearance="Appearance.Neutral" @onclick="FetchFilings" disabled="@IsButtonDisabled">
+                Vectorize
+            </FluentButton>
+        </FluentToolbar>
+    </FluentStack>
+
+    <!-- Loading State -->
+    @if (IsLoading)
+    {
+        <FluentProgress Style="width: 100%; max-width: 300px; margin: 20px auto;" />
+        <p>Loading... Please wait.</p>
+    }
+
+    <!-- Error State -->
+    @if (HasError)
+    {
+        <FluentCard Style="padding: 15px; border-radius: 8px; background-color: var(--neutral-fill-rest);">
+            <strong style="color: red;">Error:</strong>
+            <p>@ErrorMessage</p>
+        </FluentCard>
+    }
+
+
+    @if (!string.IsNullOrEmpty(FilingsJson))
+    {
+        <pre>@FilingsJson</pre>
+    }
+    <!-- Display Filings -->
+    @if (Filings != null && Filings.Any())
+    {
+        <FluentCard Style="padding: 20px; max-width: 900px; margin-top: 20px; border-radius: 12px;">
+            <h3 style="color: #0078D4;">Filings for @Ticker</h3>
+            <div
+                style="max-height: 400px; overflow-y: auto; border: 1px solid var(--neutral-outline-rest); border-radius: 8px;">
+                <FluentAccordion>
+                    @foreach (var group in Filings.GroupBy(f => f.Form))
+                    {
+                        <FluentAccordionItem Heading="@group.Key">
+                            <FluentIcon Value="@(new Icons.Regular.Size20.DocumentOnePageSparkle())" Color="@Color.Neutral"
+                                Slot="start" />
+                            <table style="width:100%; border-collapse: collapse; margin-top: 10px;">
+                                <thead>
+                                    <tr style="background-color: var(--neutral-fill-hover);">
+                                        <th style="padding: 10px; text-align:left;">Filing Date</th>
+                                        <th style="padding: 10px; text-align:left;">Accession Number</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var filing in group)
+                                    {
+                                        <tr style="border-bottom: solid thin var(--neutral-outline-rest);">
+                                            <td style="padding:10px;">@filing.FilingDate</td>
+                                            <td style="padding:10px;">
+                                                <a href="@ConstructFilingUrl(CIK, filing.AccessionNumber, filing.PrimaryDocument)"
+                                                    target="_blank">
+                                                    @filing.AccessionNumber
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </FluentAccordionItem>
+                    }
+                </FluentAccordion>
+            </div>
+        </FluentCard>
+    }
+    <!-- Display PDF -->
+    @if (!string.IsNullOrEmpty(PDFDataUrl))
+    {
+        <FluentCard Style="padding: 15px; border-radius: 8px; background-color: var(--neutral-fill-rest);">
+            <strong>PDF Preview:</strong>
+            <iframe src="@PDFDataUrl" style="width:100%; height:500px;" frameborder="0"></iframe>
+        </FluentCard>
+    }
+    <!-- Display HTML -->
+    @if (!string.IsNullOrEmpty(HTMLContent))
+    {
+        <FluentCard Style="padding: 15px; border-radius: 8px; background-color: var(--neutral-fill-rest);">
+            <strong>HTML Preview:</strong>
+            <iframe srcdoc="@HTMLContent" style="width:100%; height:500px;" frameborder="0"></iframe>
+        </FluentCard>
+    }
+    @if (!string.IsNullOrEmpty(PlotHtml))
+    {
+        <FluentCard Style="padding: 15px; border-radius: 8px; background-color: var(--neutral-fill-rest);">
+            <strong>XBRL Plot:</strong>
+            <div>@((MarkupString)PlotHtml)</div>
+        </FluentCard>
+    }
+</FluentCard>
+
+<FluentCard
+    Style="padding: 20px; max-width: 800px; margin: 40px 0 40px 20px; border-radius: 12px; box-shadow: 0px 4px 8px rgba(0,0,0,0.1); text-align: left;">
+    <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.Left" VerticalGap="2">
+        <FluentIcon Value="@(new Icons.Regular.Size24.BotSparkle())" Color="@Color.Accent" />
+        <FluentLabel Typo="Typography.H4" Style="color: #347687;">AI Insights</FluentLabel>
+    </FluentStack>
+
+    @if (Submitting)
+    {
+        <!-- Loading State -->
+        <FluentStack Orientation="Orientation.Vertical" HorizontalAlignment="HorizontalAlignment.Left" VerticalGap="2">
+        <FluentLabel Typo="Typography.Body" Style="font-size: 16px; color: #555;">Please wait...</FluentLabel>
+        <FluentProgress Style="width: 100%; max-width: 300px; margin: 20px 0;" />
+        <div id="currentLineContainer"
+            style="margin-top: 20px; padding: 15px; border: 1px solid var(--neutral-outline-rest); background-color: var(--neutral-fill-rest); font-size: 16px; border-radius: 8px;">
+            <strong style="color: #0078D4;">@CurrentLine</strong>
+        </div>
+    </FluentStack>
+    }
+    else
+    {
+        <!-- Input Section -->
+        <FluentStack Orientation="Orientation.Vertical" VerticalGap="2"
+        Style="padding: 20px; border: 1px solid var(--neutral-outline-rest); border-radius: 8px; background-color: var(--neutral-fill-rest); text-align: center;">
+        <div class="textarea-container" style="width: 100%;">
+            <textarea @bind="PromptText" @oninput="HandleInput"
+                placeholder="Ask the AI for insights, summaries, key metrics, specific data points, and more."
+                maxlength="500" id="animatedTextarea"
+                style="width: 100%; padding: 12px; font-size: 16px; border: 1px solid #ccc; border-radius: 8px; resize: vertical; transition: border-color 0.3s ease;">
+                </textarea>
+            <div class="char-counter" style="text-align: right; font-size: 14px; color: #555; margin-top: 5px;">
+                @($"{PromptText.Length}/500 characters")
+            </div>
+        </div>
+
+        <!-- Submit Button -->
+        <FluentButton IconStart="@(new Icons.Filled.Size32.ArrowCircleUp())" Appearance="Appearance.Neutral"
+            @onclick="FetchCompletion" disabled="@IsPromptButtonDisabled" Style="margin: 15px auto; display: block;">
+            Submit
+        </FluentButton>
+    </FluentStack>
+    }
+
+    <!-- Finalized Results Section -->
+    @if (FinalizedGroups.Any())
+    {
+        <FluentCard
+            Style="padding: 20px; max-width: 900px; margin: 40px auto; border-radius: 12px; box-shadow: 0px 4px 8px rgba(0,0,0,0.1);">
+            <div style="max-height: 400px; overflow-y: auto; padding: 10px;">
+                <FluentAccordion>
+                    @foreach (var (title, contentLines) in FinalizedGroups)
+                    {
+                        <FluentAccordionItem Heading="@title">
+                            <FluentIcon Value="@(new Icons.Regular.Size20.DocumentOnePageSparkle())" Color="@Color.Neutral"
+                                Slot="start" />
+                            @foreach (var content in contentLines)
+                            {
+                                <div
+                                    style="margin-bottom: 15px; padding: 10px; border: 1px solid var(--neutral-outline-hover); border-radius: 8px; background-color: var(--neutral-fill-rest); box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05); font-size: 14px; line-height: 1.5; text-align: left;">
+                                    @(new MarkupString(ParseLineToStyledHtml(content)))
+                                </div>
+                            }
+                        </FluentAccordionItem>
+                    }
+                </FluentAccordion>
+            </div>
+        </FluentCard>
+    }
+
+</FluentCard>
+
+@code {
+    private string TenantId = "1234";
+    private string UserId = "5678";
+    private string CategoryId = "Document";
+    private string PromptText = string.Empty;
+    private double SimilarityScore = 0.7;
+
+    private List<(string Title, List<string> ContentLines)> FinalizedGroups = new();
+    private string CurrentLine = string.Empty;
+    private bool Submitting = false;
+    private string CurrentTitle = "Untitled";
+
+    private bool IsPromptButtonDisabled => string.IsNullOrEmpty(PromptText) || PromptText.Length < 10;
+
+    protected override void OnInitialized()
+    {
+        ChatService.StatusUpdated += async (message) => await OnStatusUpdated(message);
+    }
+
+    private async Task OnStatusUpdated(string message)
+    {
+        Logger.LogInformation($"OnStatusUpdated received message: {message}");
+
+        if (message.StartsWith("Finalized Line:"))
+        {
+            // Extract the finalized line (e.g., content)
+            var finalizedLine = message.Replace("Finalized Line:", "").Trim();
+
+            // Check if the finalized line contains a new title
+            if (finalizedLine.StartsWith("**Title**:"))
+            {
+                // Extract the new title
+                var match = Regex.Match(finalizedLine, @"\*\*Title\*\*: (.*?)\n");
+                if (match.Success)
+                {
+                    CurrentTitle = match.Groups[1].Value.Trim();
+
+                    // Add a new group for the new title
+                    FinalizedGroups.Add((CurrentTitle, new List<string>()));
+                }
+            }
+            else
+            {
+                // Add the content line to the most recent group
+                if (FinalizedGroups.Any())
+                {
+                    FinalizedGroups.Last().ContentLines.Add(finalizedLine);
+                }
+                else
+                {
+                    // If no group exists, create one with the default title
+                    FinalizedGroups.Add((CurrentTitle, new List<string> { finalizedLine }));
+                }
+            }
+
+            StateHasChanged();
+            await JSRuntime.InvokeVoidAsync("scrollToBottom", "statusMessagesContainer");
+        }
+        else
+        {
+            // Handle streaming lines
+            CurrentLine = message.Trim();
+            StateHasChanged();
+        }
+    }
+
+    private async Task FetchCompletion(MouseEventArgs e)
+    {
+        if (IsPromptButtonDisabled)
+        {
+            Logger.LogWarning("PromptText is empty or too short.");
+            return;
+        }
+
+        Submitting = true;
+        FinalizedGroups.Clear();
+        CurrentLine = string.Empty;
+
+        try
+        {
+            // Fetch completion and title from the service
+            var (completion, title) = await ChatService.GetKnowledgeBaseStreamingCompletionAsync(
+            TenantId, UserId, CategoryId, PromptText, SimilarityScore);
+
+            // Add the final title and completion
+            //FinalizedGroups.Add((title, new List<string> { completion }));
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error fetching completion");
+            FinalizedGroups.Add(("Error", new List<string> { "An error occurred while fetching the completion." }));
+        }
+        finally
+        {
+            Submitting = false;
+        }
+    }
+
+    private string ParseLineToStyledHtml(string line)
+    {
+        line = Regex.Replace(line, @"\*\*Title\*\*: (.*?)\n",
+        @"<h4 style='color: #0078D4; font-size: 18px;'><strong>Title:</strong> $1</h4>");
+
+        line = line.Replace("**Content Summary**:",
+        "<h5 style='color: #555; font-size: 16px;'><strong>Content Summary:</strong></h5>")
+        .Replace("Reference Link:",
+        "<h5 style='color: #555; font-size: 16px;'><strong>Reference Link:</strong></h5>");
+
+        line = Regex.Replace(line, @"\[(.*?)\]\((.*?)\)",
+        @"<a href='$2' target='_blank' style='color: #0078D4;'>$1</a>");
+
+        return line.Replace("\n", "<p style='margin: 5px 0;'>");
+    }
+
+    private async void HandleInput(ChangeEventArgs e)
+    {
+        PromptText = e.Value?.ToString() ?? string.Empty;
+        await JSRuntime.InvokeVoidAsync("adjustTextAreaHeight", "animatedTextarea");
+        StateHasChanged();
+    }
+}
+@code {
+    private string Ticker = string.Empty;
+    private bool IsLoading = false;
+    private bool HasError = false;
+    private string ErrorMessage = string.Empty;
+    private List<Filing>? Filings = null;
+    private string? CIK;
+    private string? Name;
+    private string? FilingsJson;
+    private string? PDFDataUrl;
+    // Property to store the HTML content
+    private string? HTMLContent { get; set; }
+
+    // Computed property to disable buttons
+    private bool IsButtonDisabled => string.IsNullOrEmpty(Ticker) || Ticker.Length < 1;
+
+    /// <summary>
+    /// Handles input changes in the ticker input field.
+    /// Dynamically updates the state of the buttons.
+    /// </summary>
+    private async Task HandleTickerInput(ChangeEventArgs e)
+    {
+        Ticker = e.Value?.ToString() ?? string.Empty;
+        if (!string.IsNullOrEmpty(Ticker))
+        {
+            await FetchAvailableForms(); // Await the async call
+        }
+        StateHasChanged(); // Trigger UI update
+    }
+
+
+    /// <summary>
+    /// Fetches the CIK for the given ticker.
+    /// </summary>
+    private async Task FetchCIK()
+    {
+        try
+        {
+            IsLoading = true;
+            HasError = false;
+            ErrorMessage = string.Empty;
+
+            CIK = await SECEdgarWSAppService.GetCIKAsync(Ticker);
+            Name = await SECEdgarWSAppService.GetNameAsync(Ticker);
+            FilingsJson = null; // Clear filings data when fetching new CIK
+            Filings = null;
+            PDFDataUrl = null; // Clear PDF preview when fetching new CIK
+            HTMLContent = null; // Clear HTML preview when fetching new CIK
+        }
+        catch (Exception ex)
+        {
+            HasError = true;
+            ErrorMessage = $"An error occurred while fetching CIK for {Ticker}: {ex.Message}";
+            CIK = null;
+            Name = null;
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+
+    /// <summary>
+    /// Fetches the filing history for the given ticker.
+    /// </summary>
+    private async Task FetchFilings()
+    {
+        try
+        {
+            IsLoading = true;
+            HasError = false;
+            ErrorMessage = string.Empty;
+            CIK = await SECEdgarWSAppService.GetCIKAsync(Ticker);
+            Name = await SECEdgarWSAppService.GetNameAsync(Ticker);
+
+            // Fetch filings from the service
+            FilingsJson = await SECEdgarWSAppService.GetFilingsAsync(Ticker);
+            Console.WriteLine("filingsJson: ", FilingsJson);
+
+            // Parse JSON into a list of Filing objects
+            Filings = JsonSerializer.Deserialize<List<Filing>>(FilingsJson, new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
+        }
+        catch (Exception ex)
+        {
+            HasError = true;
+            ErrorMessage = $"An error occurred while fetching filings for {Ticker}: {ex.Message}";
+            Filings = null;
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+
+    public class Filing
+    {
+        public string Form { get; set; } = string.Empty;
+        public string FilingDate { get; set; } = string.Empty;
+        public string AccessionNumber { get; set; } = string.Empty;
+        public string CIK { get; set; } = string.Empty;
+        public string PrimaryDocument { get; set; } = string.Empty;
+    }
+    private string ConstructFilingUrl(string cik, string accessionNumber, string primaryDocument)
+    {
+        // Ensure the CIK is padded to 10 digits (SEC EDGAR requirement)
+        var paddedCik = cik.PadLeft(10, '0');
+
+        // Remove dashes from the accession number
+        var accessionNumberWithoutDashes = accessionNumber.Replace("-", "");
+
+        // Construct the SEC EDGAR URL
+        return $"https://www.sec.gov/Archives/edgar/data/{paddedCik}/{accessionNumberWithoutDashes}/{primaryDocument}";
+    }
+
+
+    /// <summary>
+    /// Downloads and displays the latest SEC filing as a PDF.
+    /// </summary>
+    /// <summary>
+    /// Downloads and displays the latest SEC filing as HTML.
+    /// </summary>
+    private async Task DownloadAndShowPDF()
+    {
+        try
+        {
+            IsLoading = true;
+            HasError = false;
+            ErrorMessage = string.Empty;
+
+            // Fetch HTML content as a string
+            var htmlContent = await SECEdgarWSAppService.DownloadLatest10KHtmlAsync(Ticker);
+
+            // Assign the HTML content to a variable for embedding in an iframe
+            //HTMLContent = htmlContent;
+
+            // Convert HTML to PDF and store as byte array
+            // Convert HTML to PDF and generate Data URL
+            var pdfBytes = await GoSECEdgarWSAppService.ConvertHtmlToPdfAsync(htmlContent);
+            PDFDataUrl = $"data:application/pdf;base64,{Convert.ToBase64String(pdfBytes)}";
+
+
+            Console.WriteLine("HTML successfully downloaded and displayed.");
+            CIK = await SECEdgarWSAppService.GetCIKAsync(Ticker);
+            Name = await SECEdgarWSAppService.GetNameAsync(Ticker);
+
+            FilingsJson = null; // Clear filings data when fetching new CIK
+            Filings = null;
+        }
+        catch (Exception ex)
+        {
+            HasError = true;
+            ErrorMessage = $"An error occurred while downloading the HTML for {Ticker}: {ex.Message}";
+            PDFDataUrl = null;
+            PlotHtml = null;
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+
+    /// <summary>
+    /// Downloads and displays the latest SEC filing as HTML.
+    /// </summary>
+    private async Task DownloadAndShowHTML()
+    {
+        try
+        {
+            IsLoading = true;
+            HasError = false;
+            ErrorMessage = string.Empty;
+
+            // Fetch HTML content as a string
+            var htmlContent = await SECEdgarWSAppService.DownloadLatest10KHtmlAsync(Ticker);
+
+            // Assign the HTML content to a variable for embedding in an iframe
+            HTMLContent = htmlContent;
+
+
+            Console.WriteLine("HTML successfully downloaded and displayed.");
+            CIK = await SECEdgarWSAppService.GetCIKAsync(Ticker);
+            Name = await SECEdgarWSAppService.GetNameAsync(Ticker);
+
+            FilingsJson = null; // Clear filings data when fetching new CIK
+            Filings = null;
+            PDFDataUrl = null; // Clear PDF preview when fetching new CIK
+            PlotHtml = null;
+
+        }
+        catch (Exception ex)
+        {
+            HasError = true;
+            ErrorMessage = $"An error occurred while downloading the HTML for {Ticker}: {ex.Message}";
+            HTMLContent = null;
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+
+}
+
+@code {
+    //private string Concept { get; set; } = "AssetsCurrent";
+    private string Unit { get; set; } = "USD";
+    private string? PlotHtml { get; set; }
+
+
+    private async Task FetchXBRLPlot()
+    {
+        try
+        {
+            IsLoading = true;
+            HasError = false;
+            ErrorMessage = string.Empty;
+
+            FilingsJson = null; // Clear filings data when fetching new CIK
+            Filings = null;
+            PDFDataUrl = null; // Clear PDF preview when fetching new CIK
+
+            CIK = await SECEdgarWSAppService.GetCIKAsync(Ticker);
+            Name = await SECEdgarWSAppService.GetNameAsync(Ticker);
+
+            PlotHtml = await SECEdgarWSAppService.GetXBRLPlotAsync(Ticker, SelectedConcept, Unit);
+        }
+        catch (Exception ex)
+        {
+            HasError = true;
+            ErrorMessage = $"An error occurred while fetching the plot: {ex.Message}";
+            PlotHtml = null;
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+}
+@code {
+    private bool open = false;
+    private string SelectedConcept { get; set; } = "";
+
+    private async Task OnFinancialConceptMenuChange(MenuChangeEventArgs args)
+    {
+        if (args is not null && args.Value is not null)
+        {
+            SelectedConcept = args.Value;
+            Logger.LogInformation($"Selected concept: {SelectedConcept}");
+            await FetchXBRLPlot();
+        }
+    }
+}
+
+@code {
+
+    private List<string> AvailableForms = new();
+    private string SelectedForm { get; set; } = string.Empty;
+    private bool formOpen = false;
+
+    private bool IsMenuButtonDisabled => string.IsNullOrEmpty(Ticker) || IsLoading;
+
+    private async Task FetchAvailableForms()
+    {
+        try
+        {
+            IsLoading = true;
+            HasError = false;
+            ErrorMessage = string.Empty;
+            CIK = await SECEdgarWSAppService.GetCIKAsync(Ticker);
+            Name = await SECEdgarWSAppService.GetNameAsync(Ticker);
+            Logger.LogInformation($"FetchAvailableForms CIK{CIK}");
+            Logger.LogInformation($"FetchAvailableForms Name{Name}");
+
+            // Fetch available forms for the entered ticker
+            var forms = await SECEdgarWSAppService.GetAvailableFormsAsync(Ticker);
+            AvailableForms = forms?.Select(f => f.Trim())
+            .Where(f => !string.IsNullOrWhiteSpace(f))
+            .Distinct()
+            .OrderBy(f => f)
+            .ToList() ?? new List<string>();
+
+            // Log the available forms
+            Logger.LogInformation($"Updated AvailableForms for ticker {Ticker}: {string.Join(", ", AvailableForms)}");
+
+            if (!AvailableForms.Any())
+            {
+                //ErrorMessage = $"No forms available for ticker {Ticker}.";
+            }
+
+            StateHasChanged(); // Ensure the UI updates
+        }
+        catch (Exception ex)
+        {
+            HasError = true;
+            //ErrorMessage = $"An error occurred while fetching available forms: {ex.Message}";
+            AvailableForms.Clear();
+            //Logger.LogError(ex, $"Error fetching available forms for ticker {Ticker}");
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+    /*The U.S. Securities and Exchange Commission (SEC) requires companies to submit various forms to ensure transparency
+    and protect investors. Here's a summary of some common SEC forms:
+
+        - **Form 10-K**: An annual report providing a comprehensive overview of a company's financial condition, including
+        audited financial statements.
+
+        - **Form 10-Q**: A quarterly report detailing a company's financial performance over three months, offering unaudited
+        financial statements and updates on operations.
+
+        - **Form 8-K**: A report filed to announce significant events that shareholders should know about, such as acquisitions,
+        bankruptcies, or changes in executive leadership.
+
+        - **Form 4**: Filed by insiders to disclose changes in their ownership of a company's securities, ensuring transparency
+        in insider trading activities.
+
+        - **Form 3**: The initial filing by an insider to report their ownership of company securities when they first become an
+        insider.
+
+        - **Form 5**: An annual report filed by insiders to disclose transactions that were not reported earlier on Forms 3 or
+        4.
+
+        - **Form S-3**: A simplified registration form for companies to register securities offerings, often used for secondary
+        offerings.
+
+        - **Form S-4**: Filed by companies to register securities issued in certain business combination transactions, such as
+        mergers or acquisitions.
+
+        - **Form S-8**: Used to register securities offered to employees through benefit or incentive plans.
+
+        - **Schedule 13D**: Filed by anyone who acquires beneficial ownership of more than 5% of a voting class of a company's
+        equity securities, detailing the purpose of the acquisition.
+
+        - **Schedule 13G**: A shorter version of Schedule 13D, filed by certain passive investors owning more than 5% but
+        without intent to influence control.
+
+        - **Form DEF 14A**: A definitive proxy statement sent to shareholders, providing information on matters to be discussed
+        at a shareholder meeting.
+
+        - **Form 144**: Filed by affiliates intending to sell restricted or control securities, notifying the SEC of the
+        proposed sale.
+
+        - **Form SD**: Filed to disclose the use of conflict minerals originating in the Democratic Republic of the Congo or
+        adjoining countries.
+
+        These forms are essential tools for investors to assess a company's financial health, operations, and potential risks.
+        For more detailed information, you can refer to the SEC's official guide on using EDGAR to research investments.
+        */
+    private async Task OnFormMenuChange(MenuChangeEventArgs args)
+    {
+        if (args?.Value is not null)
+        {
+            SelectedForm = args.Value;
+            Logger.LogInformation($"Selected form: {SelectedForm}");
+            await DownloadSelectedFormPdf();
+
+        }
+    }
+
+    private async Task DownloadSelectedFormPdf()
+    {
+        try
+        {
+            IsLoading = true;
+            HasError = false;
+            ErrorMessage = string.Empty;
+
+            // Fetch HTML content as a string
+            var htmlContent = await SECEdgarWSAppService.DownloadLatestFilingHtmlAsync(Ticker, SelectedForm);
+
+            // Assign the HTML content to a variable for embedding in an iframe
+            //HTMLContent = htmlContent;
+
+            // Convert HTML to PDF and store as byte array
+            // Convert HTML to PDF and generate Data URL
+            var pdfBytes = await GoSECEdgarWSAppService.ConvertHtmlToPdfAsync(htmlContent);
+            PDFDataUrl = $"data:application/pdf;base64,{Convert.ToBase64String(pdfBytes)}";
+
+
+            Console.WriteLine("HTML successfully downloaded and displayed.");
+            CIK = await SECEdgarWSAppService.GetCIKAsync(Ticker);
+            Name = await SECEdgarWSAppService.GetNameAsync(Ticker);
+
+            FilingsJson = null; // Clear filings data when fetching new CIK
+            Filings = null;
+        }
+        catch (Exception ex)
+        {
+            HasError = true;
+            ErrorMessage = $"An error occurred while downloading the HTML for {Ticker}: {ex.Message}";
+            PDFDataUrl = null;
+            PlotHtml = null;
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+
+}

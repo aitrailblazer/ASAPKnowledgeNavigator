@@ -60,6 +60,12 @@ var gosecedgarwsapp = builder.AddDockerfile("gosecedgarwsapp", "./go-sec-edgar-w
     .WithExternalHttpEndpoints()  // Make it accessible externally
     .WithOtlpExporter();          // Enable OpenTelemetry for observability
 
+// Add the Golang app as a Dockerfile
+var gotenberg = builder.AddDockerfile("gotenberg", "./gotenberg")
+    .WithHttpEndpoint(targetPort: 3000, port: 3000) // Bind host port 8000 to container port 8000
+    .WithExternalHttpEndpoints()  // Make it accessible externally
+    .WithOtlpExporter();          // Enable OpenTelemetry for observability
+
 // Add the web frontend project (combine all references here)
 // The uvicornapp API is now passed as a project reference to the front end web app.
 builder.AddProject<Projects.ASAPKnowledgeNavigator_Web>("webfrontend")
@@ -67,7 +73,8 @@ builder.AddProject<Projects.ASAPKnowledgeNavigator_Web>("webfrontend")
     .WithReference(apiService) // Reference the API service
     .WaitFor(apiService)       // Ensure webfrontend waits for the API service
     .WaitFor(secedgarwsapp)
-    .WaitFor(gosecedgarwsapp);      // Ensure webfrontend waits for uvicornapp
+    .WaitFor(gosecedgarwsapp)
+    .WaitFor(gotenberg);      // Ensure webfrontend waits for uvicornapp
 
 
 // Build and run the application

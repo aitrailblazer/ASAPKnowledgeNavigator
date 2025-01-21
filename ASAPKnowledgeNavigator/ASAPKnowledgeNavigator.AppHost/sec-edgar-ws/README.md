@@ -127,13 +127,31 @@ curl http://localhost:8000/forms/AAPL
 # Fetch the CIK for TSLA
 curl http://localhost:8000/cik/TSLA
 
+curl http://localhost:8000/name/TSLA
+
+curl http://localhost:8000/exchange/TSLA
+
+curl http://localhost:8000/exchanges
+{"exchanges":["Nasdaq","NYSE","OTC","CBOE"]
+
+curl http://localhost:8000/tickersbyexchange/Nasdaq | jq
+
 # Fetch the filing history for TSLA
 curl http://localhost:8000/filings/TSLA
+
+
 
 curl http://localhost:8000/forms/TSLA
 {"ticker":"TSLA","forms":["8-K","4","144","10-Q","DEFA14A","PX14A6G","SD","ARS","DEF 14A","PRE 14A","SC 13G/A","10-K","UPLOAD","CORRESP","8-K/A","CT ORDER","3","PX14A6N","5/A","5","4/A","10-K/A","SC 13G","424B5","SEC STAFF LETTER","S-8 POS","S-8","POS AM","SC TO-T/A","425","424B3","EFFECT","FWP","S-3ASR","S-4/A","SC TO-T","S-4","D","NO ACT"]}
 
 curl -o TSLA_10K.html http://localhost:8000/filing/html/TSLA/10-K
+
+curl -o TSLA_10K.json http://localhost:8000/filing/url/TSLA/10-K
+
+curl http://localhost:8000/filing/url/TSLA/10-K
+
+https://www.sec.gov/Archives/edgar/data/1318605/000162828024002390/tsla-20231231.htm
+
 curl -o TSLA_4.html http://localhost:8000/filing/html/TSLA/4
 
 curl -o TSLA_4.pdf http://localhost:8000/filing/pdf/TSLA/4

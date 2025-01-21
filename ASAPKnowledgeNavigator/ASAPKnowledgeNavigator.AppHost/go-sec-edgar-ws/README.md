@@ -37,6 +37,8 @@ curl -X POST http://localhost:8001/html-to-pdf \
      -H "Content-Type: application/json" \
      -d @<(jq -Rs '{html: .}' < TSLA_10K.html) \
      -o TSLA_10K.pdf
+
+
 ```
 
 ## Using the `/` Root Endpoint

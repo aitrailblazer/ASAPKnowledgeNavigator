@@ -2,8 +2,7 @@ using System;
 using System.Net.Http;
 using System.Text.Json;
 using System.Threading.Tasks;
-using PuppeteerSharp;
-using PuppeteerSharp.Media;
+using System.Text.RegularExpressions;
 public class SECEdgarWSAppService
 {
     private readonly HttpClient _httpClient;
@@ -26,36 +25,176 @@ public class SECEdgarWSAppService
     }
 
     /// <summary>
-    /// Fetches the CIK (Central Index Key) for a given stock ticker.
+    /// Fetches the CIK (Central Index Key) for a given stock ticker from the FastAPI server.
     /// </summary>
     /// <param name="ticker">The stock ticker symbol (e.g., AAPL).</param>
-    public async Task<string> GetCIKAsync(string ticker)
+    /// <returns>The CIK as a string.</returns>
+    public async Task<string?> GetCIKAsync(string ticker)
     {
-        // Construct the endpoint URL for fetching the CIK
-        string endpoint = $"/cik/{ticker}";
-
-        // Send a GET request to the endpoint
-        var response = await _httpClient.GetAsync(endpoint);
-
-        // Ensure the request was successful
-        response.EnsureSuccessStatusCode();
-
-        // Parse the JSON response to extract the CIK
-        var jsonResponse = await response.Content.ReadAsStringAsync();
-        using var document = JsonDocument.Parse(jsonResponse);
-
-        if (document.RootElement.TryGetProperty("cik", out var cikElement))
+        try
         {
-            // Handle both string and number types for CIK
-            return cikElement.ValueKind switch
+            // Validate ticker format before making the request
+            if (string.IsNullOrWhiteSpace(ticker) || !System.Text.RegularExpressions.Regex.IsMatch(ticker, @"^[A-Za-z0-9]+$"))
             {
-                JsonValueKind.String => cikElement.GetString(),
-                JsonValueKind.Number => cikElement.GetInt64().ToString(), // Convert number to string
-                _ => throw new Exception("Unexpected CIK type in response.")
-            };
-        }
+                Console.WriteLine("Invalid ticker format. Only alphanumeric characters are allowed.");
+                return string.Empty; // Return empty string for unexpected errors
+            }
 
-        throw new Exception("CIK not found in response.");
+            // Construct the endpoint URL for fetching the CIK
+            string endpoint = $"/cik/{ticker}";
+
+            // Send a GET request to the endpoint
+            var response = await _httpClient.GetAsync(endpoint);
+
+            // If the response status is 404 (Not Found), return null
+            if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                Console.WriteLine($"Ticker not found: {ticker}");
+                return string.Empty; // Return empty string for unexpected errors
+            }
+
+            // Ensure the request was successful
+            response.EnsureSuccessStatusCode();
+
+            // Parse the response as plain text
+            var cik = await response.Content.ReadAsStringAsync();
+
+            // Validate the CIK
+            if (string.IsNullOrWhiteSpace(cik) || !long.TryParse(cik, out _))
+            {
+                Console.WriteLine("Invalid or empty CIK returned by the server.");
+                return string.Empty; // Return empty string for unexpected errors
+            }
+
+            // Log the retrieved CIK
+            Console.WriteLine($"Fetched CIK for {ticker}: {cik}");
+
+            return cik;
+        }
+        catch (HttpRequestException httpEx)
+        {
+            // Log the HTTP request error
+            Console.WriteLine($"HTTP request error: {httpEx.Message}");
+            return string.Empty; // Return empty string for unexpected errors
+        }
+        catch (Exception ex)
+        {
+            // Log any unexpected error
+            Console.WriteLine($"Unexpected error: {ex.Message}");
+            return string.Empty; // Return empty string for unexpected errors
+        }
+    }
+
+
+    public async Task<string> GetNameAsync(string ticker)
+    {
+        try
+        {
+            // Validate ticker format before making the request
+            if (string.IsNullOrWhiteSpace(ticker) || !System.Text.RegularExpressions.Regex.IsMatch(ticker, @"^[A-Za-z0-9]+$"))
+            {
+                Console.WriteLine("Invalid ticker format provided.");
+                return string.Empty; // Return an empty string for invalid ticker
+            }
+
+            // Construct the endpoint URL for fetching the company name
+            string endpoint = $"/name/{ticker}";
+
+            // Send a GET request to the endpoint
+            var response = await _httpClient.GetAsync(endpoint);
+
+            // If the response status is 404 (Not Found), return null
+            if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                Console.WriteLine($"Ticker not found: {ticker}");
+                return string.Empty; // Return empty string for unexpected errors
+            }
+
+            // Ensure the request was successful
+            response.EnsureSuccessStatusCode();
+
+            // Parse the response as plain text
+            var name = await response.Content.ReadAsStringAsync();
+
+            // Validate the name
+            if (string.IsNullOrEmpty(name))
+            {
+                Console.WriteLine("Invalid or empty name returned by the server.");
+                return string.Empty; // Return empty string for unexpected errors
+            }
+
+            // Log the retrieved name
+            Console.WriteLine($"Fetched name for {ticker}: {name}");
+
+            return name;
+        }
+        catch (HttpRequestException httpEx)
+        {
+            // Log the HTTP request error
+            Console.WriteLine($"HTTP request error: {httpEx.Message}");
+            return string.Empty; // Return empty string for unexpected errors
+        }
+        catch (Exception ex)
+        {
+            // Log any unexpected error
+            Console.WriteLine($"Unexpected error: {ex.Message}");
+            return string.Empty; // Return empty string for unexpected errors
+        }
+    }
+        public async Task<string> GetExchangeAsync(string ticker)
+    {
+        try
+        {
+            // Validate ticker format before making the request
+            if (string.IsNullOrWhiteSpace(ticker) || !System.Text.RegularExpressions.Regex.IsMatch(ticker, @"^[A-Za-z0-9]+$"))
+            {
+                Console.WriteLine("Invalid ticker format provided.");
+                return string.Empty; // Return an empty string for invalid ticker
+            }
+
+            // Construct the endpoint URL for fetching the company name
+            string endpoint = $"/exchange/{ticker}";
+
+            // Send a GET request to the endpoint
+            var response = await _httpClient.GetAsync(endpoint);
+
+            // If the response status is 404 (Not Found), return null
+            if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                Console.WriteLine($"Ticker not found: {ticker}");
+                return string.Empty; // Return empty string for unexpected errors
+            }
+
+            // Ensure the request was successful
+            response.EnsureSuccessStatusCode();
+
+            // Parse the response as plain text
+            var exchange = await response.Content.ReadAsStringAsync();
+
+            // Validate the name
+            if (string.IsNullOrEmpty(exchange))
+            {
+                Console.WriteLine("Invalid or empty exchange returned by the server.");
+                return string.Empty; // Return empty string for unexpected errors
+            }
+
+            // Log the retrieved name
+            Console.WriteLine($"Fetched exchange for {ticker}: {exchange}");
+
+            return exchange;
+        }
+        catch (HttpRequestException httpEx)
+        {
+            // Log the HTTP request error
+            Console.WriteLine($"HTTP request error: {httpEx.Message}");
+            return string.Empty; // Return empty string for unexpected errors
+        }
+        catch (Exception ex)
+        {
+            // Log any unexpected error
+            Console.WriteLine($"Unexpected error: {ex.Message}");
+            return string.Empty; // Return empty string for unexpected errors
+        }
     }
 
     /// <summary>
@@ -82,20 +221,72 @@ public class SECEdgarWSAppService
     /// <param name="ticker">The stock ticker symbol (e.g., AAPL).</param>
     public async Task<string[]> GetAvailableFormsAsync(string ticker)
     {
-        string endpoint = $"/forms/{ticker}";
-        var response = await _httpClient.GetAsync(endpoint);
-        response.EnsureSuccessStatusCode();
-
-        var jsonResponse = await response.Content.ReadAsStringAsync();
-        using var document = JsonDocument.Parse(jsonResponse);
-
-        if (document.RootElement.TryGetProperty("forms", out var formsElement) && formsElement.ValueKind == JsonValueKind.Array)
+        try
         {
-            return formsElement.Deserialize<string[]>();
-        }
+            // Validate the ticker format before making the request
+            if (string.IsNullOrWhiteSpace(ticker) || !Regex.IsMatch(ticker, @"^[A-Za-z0-9]+$"))
+            {
+                Console.WriteLine("Invalid ticker format provided.");
+                return Array.Empty<string>(); // Return an empty array for invalid ticker
+            }
 
-        throw new Exception("Failed to fetch available forms.");
+            // Construct the endpoint URL
+            string endpoint = $"/forms/{ticker}";
+
+            // Send the GET request
+            var response = await _httpClient.GetAsync(endpoint);
+
+            // Handle non-successful responses gracefully
+            if (!response.IsSuccessStatusCode)
+            {
+                if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+                {
+                    Console.WriteLine($"No forms found for ticker {ticker}. Returning an empty array.");
+                    return Array.Empty<string>(); // Return an empty array if forms are not found
+                }
+
+                Console.WriteLine($"Failed to fetch forms for ticker {ticker}. Status: {response.StatusCode}");
+                return Array.Empty<string>(); // Return an empty array for other HTTP errors
+            }
+
+            // Parse the JSON response
+            var jsonResponse = await response.Content.ReadAsStringAsync();
+            using var document = JsonDocument.Parse(jsonResponse);
+
+            // Extract the "forms" property
+            if (document.RootElement.TryGetProperty("forms", out var formsElement) && formsElement.ValueKind == JsonValueKind.Array)
+            {
+                var forms = formsElement.Deserialize<string[]>();
+                if (forms != null && forms.Any())
+                {
+                    Console.WriteLine($"Fetched forms for ticker {ticker}: {string.Join(", ", forms)}");
+                    return forms; // Return the list of forms
+                }
+
+                Console.WriteLine($"No forms available in the response for ticker {ticker}.");
+                return Array.Empty<string>(); // Return an empty array if no forms are available
+            }
+
+            Console.WriteLine($"Forms property not found in the response for ticker {ticker}.");
+            return Array.Empty<string>(); // Return an empty array if "forms" property is missing
+        }
+        catch (JsonException jsonEx)
+        {
+            Console.WriteLine($"JSON parsing error: {jsonEx.Message}");
+            return Array.Empty<string>(); // Return an empty array for JSON parsing errors
+        }
+        catch (HttpRequestException httpEx)
+        {
+            Console.WriteLine($"HTTP request error: {httpEx.Message}");
+            return Array.Empty<string>(); // Return an empty array for network errors
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Unexpected error while fetching forms for ticker {ticker}: {ex.Message}");
+            return Array.Empty<string>(); // Return an empty array for unexpected errors
+        }
     }
+
     /// <summary>
     /// Downloads the latest filing of a specified form type as raw HTML.
     /// </summary>
@@ -104,7 +295,7 @@ public class SECEdgarWSAppService
     /// <returns>HTML content as a string.</returns>
     public async Task<string> DownloadLatestFilingHtmlAsync(string ticker, string formType)
     {
-         // Replace "/" with "_" in the form type to ensure it's URL-safe
+        // Replace "/" with "_" in the form type to ensure it's URL-safe
         formType = formType.Replace("/", "_");
 
         string endpoint = $"/filing/html/{ticker}/{formType}";

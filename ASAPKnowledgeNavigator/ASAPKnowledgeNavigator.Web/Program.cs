@@ -94,6 +94,14 @@ builder.Services.AddHttpClient<GoSECEdgarWSAppService>(client =>
 .AddPolicyHandler(GetRetryPolicy())        // Add retry logic
 .AddPolicyHandler(GetTimeoutPolicy());    // Add timeout handling
 
+builder.Services.AddHttpClient<GotenbergWSAppService>(client =>
+{
+    client.BaseAddress = new Uri("http://localhost:3000"); // Update with Go web service base URL
+    client.Timeout = TimeSpan.FromMinutes(5); // Extended timeout for long-running requests
+})
+.AddPolicyHandler(GetRetryPolicy())        // Add retry logic
+.AddPolicyHandler(GetTimeoutPolicy());    // Add timeout handling
+
 var app = builder.Build();
 
 if (!app.Environment.IsDevelopment())
