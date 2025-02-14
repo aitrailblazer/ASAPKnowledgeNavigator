@@ -103,6 +103,7 @@ builder.Services.AddHttpClient<GotenbergWSAppService>(client =>
 .AddPolicyHandler(GetTimeoutPolicy());    // Add timeout handling
 
 var app = builder.Build();
+app.MapDefaultEndpoints();
 
 if (!app.Environment.IsDevelopment())
 {
@@ -122,7 +123,6 @@ app.MapStaticAssets();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
-app.MapDefaultEndpoints();
 
 app.Run();
 

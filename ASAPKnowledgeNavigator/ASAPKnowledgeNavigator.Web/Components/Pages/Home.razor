@@ -59,12 +59,12 @@
                                 {
                                     @foreach (var form in AvailableForms)
                                     {
-                                                                                <FluentMenuItem Value="@form">@form</FluentMenuItem>
+                                        <FluentMenuItem Value="@form">@form</FluentMenuItem>
                                     }
                                 }
                                 else
                                 {
-                                                <FluentMenuItem Value="NoFormsAvailable" Disabled="true">No Forms Available</FluentMenuItem>
+                                        <FluentMenuItem Value="NoFormsAvailable" Disabled="true">No Forms Available</FluentMenuItem>
                                 }
             </FluentMenu>
             <FluentButton IconStart="@(new Icons.Filled.Size24.DocumentOnePageMultiple())"
@@ -108,28 +108,28 @@
     <!-- Loading State -->
                     @if (IsLoading)
                     {
-                                    <FluentProgress Style="width: 100%; max-width: 300px; margin: 20px auto;" />
-                                    <p>Loading... Please wait.</p>
+                        <FluentProgress Style="width: 100%; max-width: 300px; margin: 20px auto;" />
+                        <p>Loading... Please wait.</p>
                     }
 
     <!-- Error State -->
                     @if (HasError)
                     {
-                                    <FluentCard Style="padding: 15px; border-radius: 8px; background-color: var(--neutral-fill-rest);">
-                                        <strong style="color: red;">Error:</strong>
-                                        <p>@ErrorMessage</p>
-                                    </FluentCard>
+                        <FluentCard Style="padding: 15px; border-radius: 8px; background-color: var(--neutral-fill-rest);">
+                            <strong style="color: red;">Error:</strong>
+                            <p>@ErrorMessage</p>
+                        </FluentCard>
                     }
 
     <!-- Display Results -->
                     @if (!string.IsNullOrEmpty(CIK))
                     {
-                                    <p><strong>CIK:</strong> @CIK</p>
+                        <p><strong>CIK:</strong> @CIK</p>
                     }
 
                     @if (!string.IsNullOrEmpty(FilingsJson))
                     {
-                                    <pre>@FilingsJson</pre>
+                        <pre>@FilingsJson</pre>
                     }
     <!-- Display Filings -->
                     @if (Filings != null && Filings.Any())
@@ -141,17 +141,17 @@
                                             <FluentAccordion>
                                     @foreach (var group in Filings.GroupBy(f => f.Form))
                                     {
-                                                                                <FluentAccordionItem Heading="@group.Key">
-                                                                                    <FluentIcon Value="@(new Icons.Regular.Size20.DocumentOnePageSparkle())" Color="@Color.Neutral"
-                                                                                        Slot="start" />
-                                                                                    <table style="width:100%; border-collapse: collapse; margin-top: 10px;">
-                                                                                        <thead>
-                                                                                            <tr style="background-color: var(--neutral-fill-hover);">
-                                                                                                <th style="padding: 10px; text-align:left;">Filing Date</th>
-                                                                                                <th style="padding: 10px; text-align:left;">Accession Number</th>
-                                                                                            </tr>
-                                                                                        </thead>
-                                                                                        <tbody>
+                                        <FluentAccordionItem Heading="@group.Key">
+                                            <FluentIcon Value="@(new Icons.Regular.Size20.DocumentOnePageSparkle())" Color="@Color.Neutral"
+                                                Slot="start" />
+                                            <table style="width:100%; border-collapse: collapse; margin-top: 10px;">
+                                                <thead>
+                                                    <tr style="background-color: var(--neutral-fill-hover);">
+                                                        <th style="padding: 10px; text-align:left;">Filing Date</th>
+                                                        <th style="padding: 10px; text-align:left;">Accession Number</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
                                                     @foreach (var filing in group)
                                                     {
                                                                                                                             <tr style="border-bottom: solid thin var(--neutral-outline-rest);">
@@ -164,9 +164,9 @@
                                                                                                                                 </td>
                                                                                                                             </tr>
                                                     }
-                                                                                        </tbody>
-                                                                                    </table>
-                                                                                </FluentAccordionItem>
+                                                        </tbody>
+                                                    </table>
+                                                </FluentAccordionItem>
                                     }
                                             </FluentAccordion>
                                         </div>
@@ -175,25 +175,25 @@
     <!-- Display PDF -->
                     @if (!string.IsNullOrEmpty(PDFDataUrl))
                     {
-                                    <FluentCard Style="padding: 15px; border-radius: 8px; background-color: var(--neutral-fill-rest);">
-                                        <strong>PDF Preview:</strong>
-                                        <iframe src="@PDFDataUrl" style="width:100%; height:500px;" frameborder="0"></iframe>
-                                    </FluentCard>
+                        <FluentCard Style="padding: 15px; border-radius: 8px; background-color: var(--neutral-fill-rest);">
+                            <strong>PDF Preview:</strong>
+                            <iframe src="@PDFDataUrl" style="width:100%; height:500px;" frameborder="0"></iframe>
+                        </FluentCard>
                     }
     <!-- Display HTML -->
                     @if (!string.IsNullOrEmpty(HTMLContent))
                     {
-                                    <FluentCard Style="padding: 15px; border-radius: 8px; background-color: var(--neutral-fill-rest);">
-                                        <strong>HTML Preview:</strong>
-                                        <iframe srcdoc="@HTMLContent" style="width:100%; height:500px;" frameborder="0"></iframe>
-                                    </FluentCard>
+                        <FluentCard Style="padding: 15px; border-radius: 8px; background-color: var(--neutral-fill-rest);">
+                            <strong>HTML Preview:</strong>
+                            <iframe srcdoc="@HTMLContent" style="width:100%; height:500px;" frameborder="0"></iframe>
+                        </FluentCard>
                     }
                     @if (!string.IsNullOrEmpty(PlotHtml))
                     {
-                                    <FluentCard Style="padding: 15px; border-radius: 8px; background-color: var(--neutral-fill-rest);">
-                                        <strong>XBRL Plot:</strong>
-                                        <div>@((MarkupString)PlotHtml)</div>
-                                    </FluentCard>
+                        <FluentCard Style="padding: 15px; border-radius: 8px; background-color: var(--neutral-fill-rest);">
+                            <strong>XBRL Plot:</strong>
+                            <div>@((MarkupString)PlotHtml)</div>
+                        </FluentCard>
                     }
 </FluentCard>
      </Panel1>
@@ -249,9 +249,9 @@
                                             <FluentAccordion>
                                     @foreach (var (title, contentLines) in FinalizedGroups)
                                     {
-                                                                                <FluentAccordionItem Heading="@title">
-                                                                                    <FluentIcon Value="@(new Icons.Regular.Size20.DocumentOnePageSparkle())" Color="@Color.Neutral"
-                                                                                        Slot="start" />
+                                        <FluentAccordionItem Heading="@title">
+                                            <FluentIcon Value="@(new Icons.Regular.Size20.DocumentOnePageSparkle())" Color="@Color.Neutral"
+                                                            Slot="start" />
                                             @foreach (var content in contentLines)
                                             {
                                                                                                                     <div

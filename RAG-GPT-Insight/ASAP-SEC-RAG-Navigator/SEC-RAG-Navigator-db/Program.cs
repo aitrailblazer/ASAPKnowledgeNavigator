@@ -4,6 +4,8 @@ using System.Collections.ObjectModel;
 using System.Threading.Tasks;
 using static System.Environment;
 using Microsoft.Azure.Cosmos;
+using System.Security.Cryptography;
+using System.Text;
 using Microsoft.Azure.Cosmos.Fluent;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -701,6 +703,43 @@ public class CosmosDbServiceWorking
 
         _logger.LogInformation($"Container created or exists: {container.Id}");
     }
+
+    /*
+    {
+      "id": "threads",
+      "partitionKey": {
+        "paths": ["/tenantId"],
+        "kind": "Hash"
+      },
+      "fullTextPolicy": {
+        "defaultLanguage": "en-US",
+        "fullTextPaths": [
+          { "path": "/title", "language": "en-US" },
+          { "path": "/userInput", "language": "en-US" },
+          { "path": "/output", "language": "en-US" }
+        ]
+      },
+      "indexingPolicy": {
+        "indexingMode": "consistent",
+        "automatic": true,
+        "includedPaths": [
+          { "path": "/*" }
+        ],
+        "excludedPaths": [
+          { "path": "/\"_etag\"/?" },
+          { "path": "/vectors/*" }
+        ],
+        "fullTextIndexes": [
+          { "path": "/title", "language": "en-US" },
+          { "path": "/userInput", "language": "en-US" },
+          { "path": "/output", "language": "en-US" }
+        ],
+        "vectorIndexes": [
+          { "path": "/vectors", "type": "DiskANN" }
+        ]
+      }
+    }
+    */
 
     /// <summary>
     /// Lists all databases and their containers in the Cosmos DB account.
